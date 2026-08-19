@@ -28,8 +28,12 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 BOLD='\033[1m'
 
-# 国内镜像 (许总你说国内可用, 不用国外网络)
+# 国内镜像源 (许总你说国内可用, 不用国外网络)
+# Debian 在阿里云的源结构:
+#   主仓库: mirrors.aliyun.com/debian/
+#   安全更新: mirrors.aliyun.com/debian-security/  (独立目录)
 DEBIAN_MIRROR="https://mirrors.aliyun.com/debian/"
+DEBIAN_SECURITY_MIRROR="https://mirrors.aliyun.com/debian-security/"
 PIP_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
 
 HERMES_PORT="8080"
@@ -62,13 +66,14 @@ fi
 $SUDO cp /etc/apt/sources.list /etc/apt/sources.list.bak 2>/dev/null || true
 
 # 写国内镜像 (阿里云, 许总你说国内可用)
-DEBIAN_VERSION=$(lsb_release -cs 2>/dev/null || echo "bookworm")
+DEBIAN_VERSION=$(lsb_release -cs 2>/dev/null || echo "trixie")
+DEBIAN_VERSION=${DEBIAN_VERSION:-trixie}
 
 cat | $SUDO tee /etc/apt/sources.list << EOF
 # Hermes 国内镜像 (added by install-smart-template.sh)
 deb $DEBIAN_MIRROR $DEBIAN_VERSION main contrib non-free non-free-firmware
 deb $DEBIAN_MIRROR $DEBIAN_VERSION-updates main contrib non-free non-free-firmware
-deb $DEBIAN_MIRROR-security $DEBIAN_VERSION-security main contrib non-free non-free-firmware
+deb $DEBIAN_SECURITY_MIRROR $DEBIAN_VERSION-security main contrib non-free non-free-firmware
 EOF
 
 $SUDO apt update -qq
@@ -86,13 +91,21 @@ $SUDO apt install -y -qq \
     network-manager openssh-server
 
 # 谷歌浏览器 (国内能访问 dl.google.com)
-mkdir -p /tmp/chrome
-cd /tmp/chrome
-wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome.deb
-$SUDO apt install -y ./google-chrome.deb
-cd /
-rm -rf /tmp/chrome
-echo "  ✓ 基础包 + 谷歌浏览器"
+# 注意: dl.google.com 只提供 amd64 包, arm64 机器需用 chromium 或 skip
+ARCH_TYPE=$(uname -m)
+if [ "$ARCH_TYPE" = "x86_64" ] || [ "$ARCH_TYPE" = "amd64" ]; then
+    mkdir -p /tmp/chrome
+    cd /tmp/chrome
+    wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome.deb
+    $SUDO apt install -y ./google-chrome.deb 2>&1 | tail -5 || echo "  ⚠ Chrome 装失败 (可能缺依赖)"
+    cd /
+    rm -rf /tmp/chrome
+    echo "  ✓ 谷歌浏览器 (amd64)"
+else
+    # arm64: 装 chromium 替代 (开源版)
+    $SUDO apt install -y -qq chromium 2>&1 | tail -5 || echo "  ⚠ chromium 装失败"
+    echo "  ✓ chromium (arm64 替代)"
+fi
 sleep 1
 
 # 3. 装 CC Switch + Obsidian
@@ -175,8 +188,8 @@ if [ ! -x /usr/local/bin/feishu-cli ]; then
         # tar 里有 feishu-cli_vX.Y.Z_<os>-<arch>/feishu-cli (带目录)
         FEISHU_BIN=$(find . -name feishu-cli -type f -executable 2>/dev/null | head -1)
         if [ -n "$FEISHU_BIN" ]; then
-            mv "$FEISHU_BIN" /usr/local/bin/feishu-cli
-            chmod +x /usr/local/bin/feishu-cli
+            # 用 install 替代 mv (跨设备友好, 不许错权限)
+            $SUDO install -m 755 "$FEISHU_BIN" /usr/local/bin/feishu-cli
             echo "  ✓ feishu-cli 装好 ($(/usr/local/bin/feishu-cli --version 2>&1 | head -1))"
         else
             echo -e "  ${YELLOW}⚠ tar 没找到 feishu-cli 二进制${NC}"
@@ -185,7 +198,7 @@ if [ ! -x /usr/local/bin/feishu-cli ]; then
         echo -e "  ${YELLOW}⚠ 下载失败 (用官方 install.sh)${NC}"
         curl -fsSL https://raw.githubusercontent.com/riba2534/feishu-cli/main/install.sh | bash
     fi
-    rm -f feishu-cli.tar.gz
+    rm -rf feishu-cli.tar.gz /tmp/feishu-cli_*
     cd /
 else
     echo "  ✓ feishu-cli 已装"
@@ -208,6 +221,13 @@ fi
 
 # pip 国内镜像
 export PIP_INDEX_URL="$PIP_MIRROR"
+
+# 装 Hermes Python 依赖 (按 EVOLUTION-11 修, 之前没装 pip deps 导致 ModuleNotFoundError)
+echo "  装 Hermes Python 依赖..."
+$SUDO pip3 install --break-system-packages \
+    pyyaml python-dotenv requests httpx pydantic 2>&1 | tail -3 || \
+$SUDO apt install -y -qq python3-yaml python3-dotenv python3-requests python3-httpx 2>&1 | tail -3
+echo "  ✓ Hermes Python 依赖装好"
 
 # 检查是否装了
 if [ -d "$HOME/.hermes/hermes-agent" ]; then
