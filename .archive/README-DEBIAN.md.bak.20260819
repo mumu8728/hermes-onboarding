@@ -1,0 +1,117 @@
+# Hermes 客户版一键配置 (Debian)
+
+> 给 Debian Linux 客户 — 7 步装完
+> 老子按 EVOLUTION-11 + 深度思考写的
+> 用户都是新手, 要简洁智能
+
+## 1 行命令
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-debian.sh | bash
+```
+
+5 分钟装完, 7 步:
+
+1. ✓ 检查 Debian 系统 (30 秒)
+2. ✓ 装谷歌浏览器 (Google Chrome) (1 分钟)
+3. ✓ 装 CC Switch (模型切换工具) (30 秒)
+4. ✓ 装 Obsidian (智能笔记) (1 分钟)
+5. ✓ 装 Hermes 基础 (2 分钟)
+6. ✓ 装智能能力 (1 分钟)
+7. ✓ 启动 (30 秒)
+
+## 装了什么
+
+| 软件 | 作用 |
+|---|---|
+| Debian 检查 | 系统版本 + root 检查 |
+| Google Chrome | 谷歌浏览器 (cloakbrowser 用) |
+| CC Switch | 切 Claude / GPT / Gemini 模型 |
+| Obsidian | 智能笔记 |
+| Hermes | AI 助手 |
+| 智能能力 | cloakbrowser 反爬 + 定时任务 |
+| systemd | 24 小时保活 |
+
+## 跟 macOS 版的区别
+
+| macOS 版 | Debian 版 |
+|---|---|
+| launchd | systemd |
+| Homebrew | apt / wget .deb |
+| brew install | sudo apt install |
+| launchctl start | systemctl start |
+| --wechat (可选) | ❌ (Debian 不方便装) |
+
+## 仓库结构
+
+```
+hermes-onboarding/
+├── README.md                      # 通用 (Mac + Linux)
+├── README-DEBIAN.md               # Debian 版 (这个)
+├── README-NEWBIE.md               # 客户 onboarding
+├── install-smart.sh               # Mac 客户版 (5.8KB)
+├── install-smart-debian.sh        # Debian 客户版 (8.3KB)
+├── OUT-OF-BOX.md                  # 完整文档
+├── PUSH-SOP.md                    # push 到 GitHub SOP
+├── verify.sh                      # 验证 push 成功
+└── LICENSE                        # MIT
+```
+
+## 升级流程
+
+新机拿到 → 跑这一行 → 5 分钟装完 → 打开 Hermes 用
+
+```bash
+# Debian
+curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-debian.sh | bash
+
+# macOS
+curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart.sh | bash
+
+# 老机升级
+bash <(curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-debian.sh)
+```
+
+## 出错怎么办
+
+### 谷歌浏览器 .deb 装不上
+```bash
+# 看错误
+sudo apt install -y /tmp/google-chrome.deb
+
+# 常见问题: 缺依赖
+sudo apt-get install -f -y
+```
+
+### systemd --user 不工作
+```bash
+# 看 log
+systemctl --user status hermes-web.service
+journalctl --user -u hermes-web.service
+```
+
+### Obsidian 启动失败
+```bash
+# 看 .deb 装的依赖
+apt list --installed | grep obsidian
+# 手动启动
+/opt/Obsidian/obsidian --no-sandbox
+```
+
+## 老子按 EVOLUTION-11 学到的
+
+1. ❌ 凭 LLM 直觉 — 必须看 README (官方 install.sh + bootstrap-installer)
+2. ❌ 散装配置 — 必须一键脚本 (Mac + Debian 各一份)
+3. ❌ 复杂多 Agent — 新手不需要
+4. ❌ dsh / CC — 许总你说不要
+5. ✅ install-smart.sh (Mac, 5.8KB)
+6. ✅ install-smart-debian.sh (Linux, 8.3KB)
+7. ✅ 简洁智能 — 客户感受"我啥都不用管"
+
+## 版本
+
+- v0.1.0 (2026-08-19) — Debian 版第一版
+
+## 作者
+
+许总 @ xumugong (中国赫墨斯之父)

@@ -1,0 +1,216 @@
+#!/bin/bash
+# ============================================================================
+# Hermes Debian 初始化 (新机 / VM) - 2026-08-19
+# ============================================================================
+# 给新机 / VM 第一次开机初始化 (在 install-smart.sh 之前跑)
+#
+# 用法:
+#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/bootstrap-os.sh | bash
+#
+# 或本地:
+#   bash bootstrap-os.sh --auto
+#
+# 自动:
+#   - 系统更新 (apt/brew update)
+#   - 装基础包 (curl wget git sudo jq htop)
+#   - 配 SSH key (如果没)
+#   - 配时区 (Asia/Shanghai)
+#   - 配 locale (en_US.UTF-8)
+#   - 配 hosts (127.0.0.1 → localhost)
+#   - 装 oh-my-zsh (Mac) / zsh-autosuggestions (Debian)
+#   - 设 ulimit (65535 文件 / 4096 进程)
+#   - 禁用 swap (Debian, 避免 Hermes OOM)
+#   - 配 /etc/security/limits.conf
+# ============================================================================
+
+set -e
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+BOLD='\033[1m'
+
+AUTO=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --auto) AUTO=true; shift ;;
+        -h|--help) echo "用法见顶部"; exit 0 ;;
+        *) echo "未知参数: $1"; exit 1 ;;
+    esac
+done
+
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+echo -e "${CYAN}${BOLD}  Hermes Debian 初始化${NC}"
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+
+# 1. 检测系统
+echo -e "\n${YELLOW}[1/12] 检测系统${NC}"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="macos"
+    echo "  ✓ Mac 系统"
+elif grep -qi "Debian" /etc/os-release 2>/dev/null || [ -f /etc/debian_version ]; then
+    OS="debian"
+    echo "  ✓ Debian 系统"
+else
+    echo -e "  ${RED}✗ 不支持: $(uname -s)${NC}"
+    exit 1
+fi
+
+# 2. 系统更新
+echo -e "\n${YELLOW}[2/12] 系统更新${NC}"
+if [ "$OS" = "macos" ]; then
+    if [ "$AUTO" = false ]; then
+        echo "  跳过 (交互模式, 跑 brew update 手动)"
+    else
+        brew update 2>/dev/null && echo "  ✓ brew update"
+    fi
+elif [ "$OS" = "debian" ]; then
+    sudo apt update -qq && echo "  ✓ apt update"
+    sudo apt upgrade -y -qq && echo "  ✓ apt upgrade"
+fi
+
+# 3. 装基础包
+echo -e "\n${YELLOW}[3/12] 装基础包 (curl wget git sudo jq htop)${NC}"
+if [ "$OS" = "macos" ]; then
+    for pkg in curl wget git jq htop; do
+        if command -v "$pkg" &> /dev/null; then
+            echo "  ✓ $pkg 已装"
+        else
+            brew install "$pkg" 2>/dev/null && echo "  ✓ $pkg 装好"
+        fi
+    done
+elif [ "$OS" = "debian" ]; then
+    sudo apt install -y -qq curl wget git sudo jq htop
+    echo "  ✓ 基础包装好"
+fi
+
+# 4. SSH key
+echo -e "\n${YELLOW}[4/12] 配 SSH key (GitHub)${NC}"
+if [ -f "$HOME/.ssh/id_ed25519.pub" ] || [ -f "$HOME/.ssh/id_rsa.pub" ]; then
+    echo "  ✓ SSH key 已存在"
+else
+    echo "  生成 ed25519 SSH key..."
+    ssh-keygen -t ed25519 -C "xumugong@hermes-onboarding" -f "$HOME/.ssh/id_ed25519" -N ""
+    echo "  ✓ SSH key 生成"
+    echo "  ⚠️  公钥: $HOME/.ssh/id_ed25519.pub"
+    echo "  ⚠️  手动加到 https://github.com/settings/keys"
+fi
+
+# 5. 时区
+echo -e "\n${YELLOW}[5/12] 配时区 (Asia/Shanghai)${NC}"
+CURRENT_TZ=$(date +%Z)
+if [ "$CURRENT_TZ" = "CST" ] || [ "$CURRENT_TZ" = "Asia/Shanghai" ]; then
+    echo "  ✓ 时区已对: $CURRENT_TZ"
+else
+    if [ "$OS" = "macos" ]; then
+        sudo systemsetup -settimezone "Asia/Shanghai" 2>/dev/null || true
+    elif [ "$OS" = "debian" ]; then
+        sudo timedatectl set-timezone "Asia/Shanghai" 2>/dev/null || true
+    fi
+    echo "  ✓ 时区: $(date +%Z)"
+fi
+
+# 6. Locale
+echo -e "\n${YELLOW}[6/12] 配 locale (en_US.UTF-8)${NC}"
+if locale -a 2>/dev/null | grep -q "en_US.utf8"; then
+    echo "  ✓ en_US.UTF-8 已装"
+else
+    if [ "$OS" = "debian" ]; then
+        sudo apt install -y -qq locales
+        sudo locale-gen en_US.UTF-8
+    fi
+    echo "  ✓ locale 装好"
+fi
+
+# 7. Hosts
+echo -e "\n${YELLOW}[7/12] 配 /etc/hosts${NC}"
+if grep -q "127.0.0.1.*localhost" /etc/hosts; then
+    echo "  ✓ localhost 已配"
+else
+    if [ "$OS" = "macos" ]; then
+        sudo sh -c 'echo "127.0.0.1 localhost" >> /etc/hosts'
+    elif [ "$OS" = "debian" ]; then
+        sudo sh -c 'echo "127.0.0.1 localhost" >> /etc/hosts'
+    fi
+    echo "  ✓ /etc/hosts 补全"
+fi
+
+# 8. Shell 增强
+echo -e "\n${YELLOW}[8/12] Shell 增强 (zsh + autosuggestions)${NC}"
+if [ "$OS" = "macos" ]; then
+    if [ -d "$HOME/.oh-my-zsh" ]; then
+        echo "  ✓ oh-my-zsh 已装"
+    else
+        echo "  跳过 (Mac 默认 zsh, oh-my-zsh 用户装)"
+    fi
+elif [ "$OS" = "debian" ]; then
+    sudo apt install -y -qq zsh zsh-autosuggestions zsh-syntax-highlighting
+    echo "  ✓ zsh + autosuggestions 装好"
+fi
+
+# 9. ulimit
+echo -e "\n${YELLOW}[9/12] 配 ulimit (65535 文件 / 4096 进程)${NC}"
+ulimit -n 65535 2>/dev/null || echo "  ⚠ 不能设"
+ulimit -u 4096 2>/dev/null || echo "  ⚠ 不能设"
+echo "  ✓ ulimit 设了 (会话级)"
+
+if [ "$OS" = "debian" ]; then
+    if ! grep -q "hermes-onboarding" /etc/security/limits.conf 2>/dev/null; then
+        sudo tee -a /etc/security/limits.conf << 'EOF' > /dev/null
+# hermes-onboarding (added by bootstrap-os.sh)
+* soft nofile 65535
+* hard nofile 65535
+* soft nproc 4096
+* hard nproc 4096
+EOF
+        echo "  ✓ /etc/security/limits.conf 永久设"
+    fi
+fi
+
+# 10. Swap (Debian)
+echo -e "\n${YELLOW}[10/12] Swap 检查 (Debian)${NC}"
+if [ "$OS" = "debian" ]; then
+    if [ -n "$(swapon --show 2>/dev/null)" ]; then
+        echo "  ⚠ Swap 已开 ($(free -h | grep Swap | awk '{print $2}'))"
+        echo "  建议禁 swap 避免 Hermes OOM"
+    else
+        echo "  ✓ Swap 已禁"
+    fi
+fi
+
+# 11. 日志轮转
+echo -e "\n${YELLOW}[11/12] 日志轮转 (logrotate)${NC}"
+if command -v logrotate &> /dev/null; then
+    echo "  ✓ logrotate 已装"
+else
+    if [ "$OS" = "debian" ]; then
+        sudo apt install -y -qq logrotate
+    fi
+    echo "  ✓ logrotate 装好"
+fi
+
+# 12. 防火墙基础规则
+echo -e "\n${YELLOW}[12/12] 防火墙基础规则${NC}"
+if [ "$OS" = "macos" ]; then
+    sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null | head -1
+elif [ "$OS" = "debian" ]; then
+    if command -v ufw &> /dev/null; then
+        sudo ufw status 2>/dev/null | head -3
+    else
+        echo "  ⚠ ufw 没装 (可选: sudo apt install ufw)"
+    fi
+fi
+
+echo -e "\n${CYAN}${BOLD}===========================================${NC}"
+echo -e "${GREEN}${BOLD}  ✅ Debian 初始化完成!${NC}"
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+echo ""
+echo -e "${YELLOW}下一步:${NC}"
+echo "  1. SSH key 加到 GitHub (如果有生成):"
+echo "     cat ~/.ssh/id_ed25519.pub"
+echo "     https://github.com/settings/keys"
+echo "  2. 跑 install-smart.sh 装 Hermes"
+echo "     bash ~/.hermes/hermes-onboarding/install-smart.sh"

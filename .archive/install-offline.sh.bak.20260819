@@ -1,0 +1,121 @@
+#!/bin/bash
+# ============================================================================
+# Hermes 离线安装 (2026-08-19)
+# ============================================================================
+# 给没网络的环境装 Hermes (用本地 tarball / USB)
+#
+# 用法:
+#   # 在有网的机器上下载离线包
+#   bash download-offline.sh     # 生成 hermes-offline-<date>.tar.gz
+#
+#   # 把 tarball 拷到离线机器, 然后:
+#   bash install-offline.sh hermes-offline-<date>.tar.gz
+# ============================================================================
+
+set -e
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+BOLD='\033[1m'
+
+if [ $# -lt 1 ]; then
+    echo "用法: $0 <offline-tarball>"
+    echo "例: $0 hermes-offline-20260819.tar.gz"
+    exit 1
+fi
+
+TARBALL="$1"
+
+if [ ! -f "$TARBALL" ]; then
+    echo -e "${RED}✗ 找不到: $TARBALL${NC}"
+    exit 1
+fi
+
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+echo -e "${CYAN}${BOLD}  Hermes 离线安装${NC}"
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+
+# 1. 检测系统 (跟 install-smart.sh 类似)
+echo -e "\n${YELLOW}[1/5] 检测系统${NC}"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="macos"
+elif grep -qi "Debian" /etc/os-release 2>/dev/null || [ -f /etc/debian_version ]; then
+    OS="debian"
+else
+    echo -e "${RED}✗ 不支持: $(uname -s)${NC}"
+    exit 1
+fi
+echo "  ✓ 系统: $OS"
+
+# 2. 解包
+echo -e "\n${YELLOW}[2/5] 解离线包${NC}"
+WORK_DIR="/tmp/hermes-offline-$$"
+mkdir -p "$WORK_DIR"
+tar xzf "$TARBALL" -C "$WORK_DIR"
+echo "  ✓ 解到 $WORK_DIR"
+
+# 3. 检查本地包
+echo -e "\n${YELLOW}[3/5] 检查本地包${NC}"
+LOCAL_REPO=""
+if [ "$OS" = "macos" ]; then
+    # 找 brew bottle
+    for d in "$WORK_DIR"/homebrew-bottle/*; do
+        [ -f "$d" ] && LOCAL_REPO="$d" && break
+    done
+elif [ "$OS" = "debian" ]; then
+    # 找 apt mirror
+    for d in "$WORK_DIR"/apt-mirror/*; do
+        [ -d "$d" ] && LOCAL_REPO="$d" && break
+    done
+fi
+
+if [ -n "$LOCAL_REPO" ]; then
+    echo "  ✓ 找到本地包: $LOCAL_REPO"
+else
+    echo -e "  ${YELLOW}⚠ 没找到本地包, 假设所有依赖都装了${NC}"
+fi
+
+# 4. 配置本地源
+echo -e "\n${YELLOW}[4/5] 配置本地源${NC}"
+if [ "$OS" = "debian" ] && [ -d "$LOCAL_REPO" ]; then
+    # 备份 sources.list
+    sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+
+    # 加本地源
+    echo "deb [trusted=yes] file://$LOCAL_REPO ./" | sudo tee /etc/apt/sources.list.d/hermes-offline.list
+    sudo apt update -qq
+    echo "  ✓ apt 用本地源"
+fi
+
+# 5. 跑离线 install-smart.sh
+echo -e "\n${YELLOW}[5/5] 跑离线 install-smart.sh${NC}"
+INSTALL_SCRIPT="$WORK_DIR/install-smart.sh"
+if [ ! -f "$INSTALL_SCRIPT" ]; then
+    if [ -f "$WORK_DIR/install-smart-debian.sh" ]; then
+        INSTALL_SCRIPT="$WORK_DIR/install-smart-debian.sh"
+    else
+        echo -e "${RED}✗ tarball 里没 install-smart*.sh${NC}"
+        exit 1
+    fi
+fi
+
+# 离线环境变量
+export HERMES_OFFLINE_DIR="$WORK_DIR"
+export HERMES_NO_NETWORK=1
+
+bash "$INSTALL_SCRIPT" || {
+    echo -e "${RED}✗ install-smart.sh 失败${NC}"
+    exit 1
+}
+
+echo -e "\n${CYAN}${BOLD}===========================================${NC}"
+echo -e "${GREEN}${BOLD}  ✅ 离线安装完成!${NC}"
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+echo ""
+echo -e "${YELLOW}清理:${NC}"
+echo "  rm -rf $WORK_DIR"
+echo "  sudo rm /etc/apt/sources.list.d/hermes-offline.list"
+echo "  sudo mv /etc/apt/sources.list.bak /etc/apt/sources.list"

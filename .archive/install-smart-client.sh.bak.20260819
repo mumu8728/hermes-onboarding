@@ -1,0 +1,211 @@
+#!/bin/bash
+# ============================================================================
+# Hermes 客户端一键配置 (Mac/Debian/Win) - 2026-08-19
+# ============================================================================
+# 给客户机器用 — 只装浏览器 + Obsidian, 不装 Hermes (服务端在路由器)
+# 客户用 LAN 访问路由器上跑的 Hermes, 不需要 VPN
+#
+# 用法:
+#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-client.sh | bash
+#
+# 4 步自动跑 (3-5 分钟):
+#   1. 检测系统 (Mac/Debian/Win)
+#   2. 装谷歌浏览器 (从路由器下载, 或官网)
+#   3. 装 Obsidian (从路由器下载, 或官网)
+#   4. 加书签 (一键访问路由器 Hermes)
+# ============================================================================
+
+set -e
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+BOLD='\033[1m'
+
+# 路由器配置 (许总你说客户不需要 VPN, 路由器在 LAN)
+ROUTER_URL="http://hermes.local:8080"     # 默认 (mDNS)
+ROUTER_URL_ALT=""                          # 备用 IP
+BOOKMARK_NAME="Hermes AI (路由器)"
+
+# 解析参数
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --router) ROUTER_URL="$2"; shift 2 ;;
+        --name) BOOKMARK_NAME="$2"; shift 2 ;;
+        -h|--help) echo "用法见顶部"; exit 0 ;;
+        *) echo "未知参数: $1"; exit 1 ;;
+    esac
+done
+
+step=0
+total=4
+
+progress() {
+    step=$((step+1))
+    echo ""
+    echo -e "${CYAN}${BOLD}[${step}/${total}]${NC} ${GREEN}$1${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+echo -e "${CYAN}${BOLD}  Hermes 客户端 (Mac/Debian)${NC}"
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+
+# 1. 检测系统
+progress "检测系统 (1/4)"
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="macos"
+    echo "  ✓ Mac 系统"
+elif grep -qi "Debian" /etc/os-release 2>/dev/null || [ -f /etc/debian_version ]; then
+    OS="debian"
+    echo "  ✓ Debian 系统"
+else
+    echo -e "${RED}✗ 不支持: $(uname -s)${NC}"
+    echo "  Windows 用户: 用 WSL2 装 Debian, 然后跑这个脚本"
+    exit 1
+fi
+
+# 2. 装谷歌浏览器
+progress "装谷歌浏览器 (2/4)"
+
+if command -v google-chrome &> /dev/null || [ -d "/Applications/Google Chrome.app" ]; then
+    echo "  ✓ Chrome 已装"
+else
+    if [ "$OS" = "macos" ]; then
+        # Mac: 从官网下载 (国内能访问 dl.google.com)
+        cd /tmp
+        wget -q https://dl.google.com/chrome/mac/stable/GGRO/googlechrome.dmg -O chrome.dmg 2>/dev/null || \
+        wget -q https://dl.google.com/chrome/mac/stable/GGRO/googlechrome.dmg -O chrome.dmg
+        if [ -f chrome.dmg ]; then
+            hdiutil attach chrome.dmg
+            cp -R "/Volumes/Google Chrome/Google Chrome.app" /Applications/
+            hdiutil detach "/Volumes/Google Chrome"
+            rm chrome.dmg
+            echo "  ✓ Chrome 装好"
+        else
+            echo -e "  ${YELLOW}⚠ Chrome 下载失败 (路由器代理装)${NC}"
+        fi
+    elif [ "$OS" = "debian" ]; then
+        # Debian: 路由器代理下载 (国内)
+        if curl -sf "$SL -o /tmp/chrome.deb" 2>/dev/null; then
+            sudo apt install -y /tmp/chrome.deb
+            rm /tmp/chrome.deb
+            echo "  ✓ Chrome 装好"
+        else
+            # 直接下载
+            wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O /tmp/chrome.deb
+            sudo apt install -y /tmp/chrome.deb
+            rm /tmp/chrome.deb
+            echo "  ✓ Chrome 装好"
+        fi
+    fi
+fi
+sleep 1
+
+# 3. 装 Obsidian
+progress "装 Obsidian (3/4)"
+
+if [ -d "/Applications/Obsidian.app" ] || command -v obsidian &> /dev/null; then
+    echo "  ✓ Obsidian 已装"
+else
+    if [ "$OS" = "macos" ]; then
+        # Mac: 从路由器下载 + 装
+        if curl -sf "$SL -o /tmp/obsidian.dmg" 2>/dev/null; then
+            echo "  (路由器下载 OK, 但 Mac 装 .dmg 复杂, 用户手动装)"
+        fi
+        echo -e "  ${YELLOW}⚠ Obsidian 用户去 https://obsidian.md/download 装${NC}"
+    elif [ "$OS" = "debian" ]; then
+        # Debian: 路由器代理下载
+        wget -q https://github.com/obsidianmd/obsidian-releases/releases/download/v1.5.8/obsidian_1.5.8_amd64.deb -O /tmp/obsidian.deb 2>/dev/null || \
+        curl -sf "$SL -o /tmp/obsidian.deb" 2>/dev/null
+        if [ -f /tmp/obsidian.deb ]; then
+            sudo apt install -y /tmp/obsidian.deb
+            rm /tmp/obsidian.deb
+            echo "  ✓ Obsidian 装好"
+        else
+            echo -e "  ${YELLOW}⚠ Obsidian 下载失败 (用户去官网装)${NC}"
+        fi
+    fi
+fi
+sleep 1
+
+# 4. 加书签 + 创建快捷方式
+progress "加 Hermes 书签 + 快捷方式 (4/4)"
+
+# 测连接
+echo "  测连接路由器 Hermes..."
+if curl -sf --max-time 5 "$ROUTER_URL" > /dev/null 2>&1; then
+    echo "  ✓ 路由器 Hermes OK"
+    ROUTER_REACHABLE=true
+else
+    echo -e "  ${YELLOW}⚠ 连不上 $ROUTER_URL${NC}"
+    echo "    检查: 路由器是否开? Hermes 是否跑?"
+    ROUTER_REACHABLE=false
+fi
+
+# Mac: 用 osascript 加书签 (Safari) 或写 HTML 拖到 Dock
+if [ "$OS" = "macos" ]; then
+    # 写一个 HTML 书签到桌面
+    BOOKmarkFile="$HOME/Desktop/Hermes AI.html"
+    cat > "$BOOKmarkFile" << EOF
+<!DOCTYPE html>
+<html>
+<head>
+  <title>$BOOKMARK_NAME</title>
+  <meta http-equiv="refresh" content="0; url=$ROUTER_URL">
+  <style>
+    body { font-family: -apple-system, sans-serif; text-align: center; padding: 60px; background: #f5f5f7; }
+    h1 { color: #1d1d1f; }
+    a { color: #0071e3; text-decoration: none; font-size: 20px; }
+  </style>
+</head>
+<body>
+  <h1>$BOOKMARK_NAME</h1>
+  <p><a href="$ROUTER_URL">$ROUTER_URL</a></p>
+</body>
+</html>
+EOF
+    echo "  ✓ 桌面快捷方式: $BOOKmarkFile"
+fi
+
+# Debian: 写 .desktop 文件
+if [ "$OS" = "debian" ]; then
+    DESKTOP_DIR="$HOME/.local/share/applications"
+    mkdir -p "$DESKTOP_DIR"
+    cat > "$DESKTOP_DIR/hermes-router.desktop" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=$BOOKMARK_NAME
+Comment=访问路由器跑的 Hermes AI
+Exec=google-chrome $ROUTER_URL
+Icon=google-chrome
+Terminal=false
+Categories=Network;WebBrowser;
+EOF
+    chmod +x "$DESKTOP_DIR/hermes-router.desktop"
+    echo "  ✓ 桌面快捷方式: $DESKTOP_DIR/hermes-router.desktop"
+fi
+
+echo -e "\n${CYAN}${BOLD}===========================================${NC}"
+echo -e "${GREEN}${BOLD}  ✅ 客户端装好!${NC}"
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+echo ""
+echo -e "${CYAN}${BOLD}客户怎么用:${NC}"
+echo "  1. 打开 Chrome 浏览器"
+echo "  2. 访问: $ROUTER_URL"
+echo "  3. 跟 Hermes AI 说话"
+echo ""
+if [ "$ROUTER_REACHABLE" = true ]; then
+    echo -e "${GREEN}✓ 路由器已通${NC}"
+else
+    echo -e "${YELLOW}⚠ 路由器不通 — 检查:${NC}"
+    echo "    - 路由器是否开"
+    echo "    - 路由器 LAN IP 是否对"
+    echo "    - Hermes 是否跑 (在路由器跑 systemctl --user status hermes-web)"
+fi
+echo ""
+echo -e "${GREEN}享受智能!${NC}"

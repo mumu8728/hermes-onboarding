@@ -1,0 +1,172 @@
+#!/bin/bash
+# ============================================================================
+# Hermes 离线包下载 (2026-08-19)
+# ============================================================================
+# 在有网机器上下载所有依赖 + install-smart.sh, 打包成 tarball
+# 给离线机器用
+#
+# 用法:
+#   bash download-offline.sh
+#
+# 输出: hermes-offline-<date>.tar.gz
+# ============================================================================
+
+set -e
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+BOLD='\033[1m'
+
+DATE=$(date +%Y%m%d)
+OUTPUT="hermes-offline-$DATE.tar.gz"
+WORK_DIR="/tmp/hermes-offline-build-$$"
+
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+echo -e "${CYAN}${BOLD}  Hermes 离线包下载${NC}"
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+
+mkdir -p "$WORK_DIR"
+cd "$WORK_DIR"
+
+# 1. 检测系统
+echo -e "\n${YELLOW}[1/7] 检测系统${NC}"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="macos"
+elif grep -qi "Debian" /etc/os-release 2>/dev/null || [ -f /etc/debian_version ]; then
+    OS="debian"
+else
+    echo -e "${RED}✗ 不支持: $(uname -s)${NC}"
+    exit 1
+fi
+echo "  ✓ 系统: $OS"
+
+# 2. 下载 install-smart.sh
+echo -e "\n${YELLOW}[2/7] 下载 install-smart.sh${NC}"
+curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart.sh -o install-smart.sh
+curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-debian.sh -o install-smart-debian.sh
+curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-offline.sh -o install-offline.sh
+echo "  ✓ install-smart*.sh 下载"
+
+# 3. 下载 hermes-agent 官方包
+echo -e "\n${YELLOW}[3/7] 下载 Hermes 官方包${NC}"
+mkdir -p hermes-agent
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh -o hermes-agent/install.sh
+echo "  ✓ hermes-agent/install.sh 下载"
+
+# 4. 下载 .deb 包 (Debian)
+if [ "$OS" = "debian" ]; then
+    echo -e "\n${YELLOW}[4/7] 下载 .deb 包 (Debian apt mirror)${NC}"
+    mkdir -p apt-mirror
+
+    # 装 build tools
+    sudo apt install -y -qq apt-mirror dpkg-dev 2>/dev/null
+
+    # 配置本地 mirror
+    cat > /tmp/hermes-mirror.list << EOF
+deb http://deb.debian.org/debian $(lsb_release -cs 2>/dev/null || echo bookworm) main contrib non-free non-free-firmware
+EOF
+
+    # 用 apt download 装包
+    mkdir -p apt-mirror/debs
+    cd apt-mirror/debs
+
+    # 装核心包 (curl / wget / git / sudo / jq / htop / zsh)
+    apt-get download curl wget git sudo jq htop zsh zsh-autosuggestions zsh-syntax-highlighting locales logrotate ca-certificates 2>&1 | tail -5
+
+    cd "$WORK_DIR"
+    echo "  ✓ .deb 包下载"
+
+    # 装 Chrome / Obsidian
+    mkdir -p apt-mirror/extras
+    cd apt-mirror/extras
+
+    wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome.deb
+    wget -q https://github.com/obsidianmd/obsidian-releases/releases/download/v1.5.8/obsidian_1.5.8_amd64.deb -O obsidian.deb
+
+    # CC Switch AppImage
+    mkdir -p cc-switch
+    cd cc-switch
+    wget -q https://github.com/xumugong/cc-switch/releases/latest/download/cc-switch.AppImage -O cc-switch.AppImage 2>/dev/null || echo "  ⚠ CC Switch 下载失败 (用本地装)"
+
+    cd "$WORK_DIR"
+    echo "  ✓ 额外软件包下载"
+fi
+
+# 5. Mac: brew bundle 下载
+if [ "$OS" = "macos" ]; then
+    echo -e "\n${YELLOW}[4/7] 下载 brew bottle (Mac)${NC}"
+    mkdir -p homebrew-bottle
+
+    # 装 brew bundle
+    if command -v brew &> /dev/null; then
+        brew bundle dump 2>/dev/null || true
+
+        # brew fetch 预下载
+        for pkg in curl wget git jq htop zsh zsh-autosuggestions zsh-syntax-highlighting; do
+            brew fetch "$pkg" 2>/dev/null || echo "  ⚠ $pkg fetch 失败"
+        done
+    fi
+
+    echo "  ✓ brew 包下载"
+fi
+
+# 6. 生成 README
+echo -e "\n${YELLOW}[5/7] 生成 README${NC}"
+cat > README-OFFLINE.md << EOF
+# Hermes 离线安装包
+
+生成时间: $DATE
+系统: $OS
+
+## 内容
+- install-smart.sh (Mac 客户)
+- install-smart-debian.sh (Debian 客户)
+- install-offline.sh (离线安装)
+- hermes-agent/install.sh (官方 Hermes)
+EOF
+
+if [ "$OS" = "debian" ]; then
+    cat >> README-OFFLINE.md << EOF
+- apt-mirror/debs/*.deb (核心 .deb 包)
+- apt-mirror/extras/*.deb (Chrome / Obsidian)
+- apt-mirror/cc-switch/*.AppImage (CC Switch)
+EOF
+fi
+
+if [ "$OS" = "macos" ]; then
+    cat >> README-OFFLINE.md << EOF
+- homebrew-bottle/ (Mac brew bottle)
+EOF
+fi
+
+cat >> README-OFFLINE.md << EOF
+
+## 用法 (离线机器)
+\`\`\`bash
+# 把 hermes-offline-$DATE.tar.gz 拷到离线机器
+bash install-offline.sh hermes-offline-$DATE.tar.gz
+\`\`\`
+EOF
+
+# 7. 打包
+echo -e "\n${YELLOW}[6/7] 打包${NC}"
+tar czf "$OUTPUT" --exclude='*.tar.gz' .
+SIZE=$(du -sh "$OUTPUT" | awk '{print $1}')
+echo "  ✓ 打包: $OUTPUT ($SIZE)"
+
+# 8. 清理
+echo -e "\n${YELLOW}[7/7] 清理${NC}"
+cd /
+rm -rf "$WORK_DIR"
+echo "  ✓ 清理: $WORK_DIR"
+
+echo -e "\n${CYAN}${BOLD}===========================================${NC}"
+echo -e "${GREEN}${BOLD}  ✅ 离线包生成!${NC}"
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+echo ""
+echo -e "${YELLOW}输出:${NC} $(pwd -)/$OUTPUT ($SIZE)"
+echo -e "${YELLOW}用法 (离线机器):${NC}"
+echo "  bash install-offline.sh $OUTPUT"

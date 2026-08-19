@@ -1,0 +1,243 @@
+#!/bin/bash
+# ============================================================================
+# Hermes 路由器版一键配置 (Debian + 国内镜像) - 2026-08-19
+# ============================================================================
+# 给许总你路由器 (Debian 系统) 跑 — 客户在 LAN 访问, 不需要 VPN
+# 全部用国内镜像, 国内可用
+#
+# 用法:
+#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-router.sh | bash
+#
+# 7 步自动跑 (15-30 分钟):
+#   1. 配国内 apt 镜像源
+#   2. 装基础包 + 谷歌浏览器 (Debian 用 .deb)
+#   3. 装 CC Switch + Obsidian
+#   4. 装 Hermes (服务端, 监听 LAN)
+#   5. 配 mDNS (客户机器能 http://hermes.local 访问)
+#   6. 配 systemd (24h 保活)
+#   7. 启动 + 显示客户访问 URL
+# ============================================================================
+
+set -e
+
+# 颜色
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+BOLD='\033[1m'
+
+# 国内镜像源 (许总你说国内可用, 不用国外网络)
+DEBIAN_MIRROR="https://mirrors.aliyun.com/debian/"
+PIP_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
+NPM_MIRROR="https://registry.npmmirror.com/"
+
+HERMES_PORT="8080"
+HERMES_HOST="0.0.0.0"
+
+step=0
+total=7
+
+progress() {
+    step=$((step+1))
+    echo ""
+    echo -e "${CYAN}${BOLD}[${step}/${total}]${NC} ${GREEN}$1${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+echo -e "${CYAN}${BOLD}  Hermes 路由器版 (Debian + 国内镜像)${NC}"
+echo -e "${CYAN}${BOLD}===========================================${NC}"
+
+# 1. 配国内 apt 镜像
+progress "配国内 apt 镜像源 (1/7)"
+
+# 备份 sources.list
+sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak 2>/dev/null || true
+
+# 写国内镜像 (阿里云)
+cat | sudo tee /etc/apt/sources.list << EOF
+# Hermes 国内镜像 (added by install-smart-router.sh)
+deb $DEBIAN_MIRROR $(lsb_release -cs 2>/dev/null || echo bookworm) main contrib non-free non-free-firmware
+deb http://security.debian.org/debian-security $(lsb_release -cs 2>/dev/null || echo bookworm)-security main contrib non-free non-free-firmware
+deb $DEBIAN_MIRROR $(lsb_release -cs 2>/dev/null || echo bookworm)-updates main contrib non-free non-free-firmware
+EOF
+
+sudo apt update -qq
+echo "  ✓ apt 用阿里云镜像"
+sleep 1
+
+# 2. 装基础包 + 谷歌浏览器
+progress "装基础包 + 谷歌浏览器 (2/7)"
+
+# 基础包
+sudo apt install -y -qq curl wget git sudo jq htop zsh zsh-autosuggestions zsh-syntax-highlighting locales logrotate ca-certificates apt-transport-https gnupg lsb-release
+
+# 谷歌浏览器 (下载 .deb, 不用国外源)
+mkdir -p /tmp/chrome
+cd /tmp/chrome
+wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O google-chrome.deb
+sudo apt install -y ./google-chrome.deb
+cd /
+
+echo "  ✓ 基础包 + 谷歌浏览器"
+sleep 1
+
+# 3. 装 CC Switch + Obsidian
+progress "装 CC Switch + Obsidian (3/7)"
+
+# CC Switch (AppImage, 从 GitHub 下载 — 如果路由能访问)
+mkdir -p $HOME/.local/bin
+if [ -f "$HOME/.local/bin/cc-switch" ]; then
+    echo "  ✓ CC Switch 已装"
+else
+    wget -q https://github.com/xumugong/cc-switch/releases/latest/download/cc-switch.AppImage -O $HOME/.local/bin/cc-switch.AppImage 2>/dev/null && {
+        chmod +x $HOME/.local/bin/cc-switch.AppImage
+        cat > $HOME/.local/bin/cc-switch << 'WRAPPER'
+#!/bin/bash
+exec $HOME/.local/bin/cc-switch.AppImage "$@"
+WRAPPER
+        chmod +x $HOME/.local/bin/cc-switch
+        echo "  ✓ CC Switch 装好"
+    } || echo "  ⚠ CC Switch 装失败 (路由器无 GitHub 访问)"
+fi
+
+# Obsidian
+wget -q https://github.com/obsidianmd/obsidian-releases/releases/download/v1.5.8/obsidian_1.5.8_amd64.deb -O /tmp/obsidian.deb
+sudo apt install -y /tmp/obsidian.deb
+rm /tmp/obsidian.deb
+echo "  ✓ Obsidian 装好"
+sleep 1
+
+# 4. 装 Hermes (服务端)
+progress "装 Hermes 服务端 (4/7)"
+
+# 检查是否装了
+if [ -d "$HOME/.hermes/hermes-agent" ]; then
+    echo "  ✓ Hermes 已装"
+else
+    # 装 Hermes (用官方 install.sh, 但 pip 用国内镜像)
+    export PIP_INDEX_URL="$PIP_MIRROR"
+    curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --include-desktop --non-interactive
+fi
+
+echo "  ✓ Hermes 装好"
+sleep 1
+
+# 5. 配 mDNS + LAN 访问
+progress "配 mDNS (客户用 hermes.local 访问) (5/7)"
+
+# 装 avahi (mDNS)
+sudo apt install -y -qq avahi-daemon avahi-utils
+sudo systemctl enable avahi-daemon
+sudo systemctl start avahi-daemon
+
+# 加 hermes.local 主机名
+sudo tee /etc/avahi/services/hermes.service << EOF
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <name>Hermes AI</name>
+  <service>
+    <type>_http._tcp</type>
+    <port>$HERMES_PORT</port>
+  </service>
+</service-group>
+EOF
+
+# 配置 Hermes 监听 0.0.0.0 (LAN 可访问)
+mkdir -p $HOME/.hermes
+cat > $HOME/.hermes/launcher-config.yaml << EOF
+host: 0.0.0.0
+port: $HERMES_PORT
+EOF
+
+echo "  ✓ mDNS 配置 (客户用 hermes.local:$HERMES_PORT 访问)"
+sleep 1
+
+# 6. 配 systemd (24h 保活)
+progress "配 systemd 24h 保活 (6/7)"
+
+# 创建 systemd service
+SERVICE_DIR="$HOME/.config/systemd/user"
+mkdir -p "$SERVICE_DIR"
+
+cat > "$SERVICE_DIR/hermes-web.service" << EOF
+[Unit]
+Description=Hermes Web (24h 保活, LAN 监听)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=$HOME/.hermes
+Environment="HERMES_HOME=$HOME/.hermes"
+Environment="PIP_INDEX_URL=$PIP_MIRROR"
+ExecStart=$HOME/.local/bin/hermes web --host $HERMES_HOST --port $HERMES_PORT
+Restart=always
+RestartSec=10
+StandardOutput=append:$HOME/.hermes/logs/service.log
+StandardError=append:$HOME/.hermes/logs/service-error.log
+
+[Install]
+WantedBy=default.target
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable hermes-web.service
+systemctl --user start hermes-web.service
+
+echo "  ✓ systemd 24h 保活"
+sleep 1
+
+# 7. 启动 + 显示访问 URL
+progress "启动 + 显示客户访问 URL (7/7)"
+
+# 等启动
+sleep 5
+
+# 看状态
+if systemctl --user is-active hermes-web.service > /dev/null; then
+    echo "  ✓ Hermes 跑通"
+else
+    echo "  ✗ Hermes 没起来 (看 log: cat $HOME/.hermes/logs/service-error.log)"
+fi
+
+# 看 LAN IP
+LAN_IP=$(hostname -I | awk '{print $1}')
+HOSTNAME=$(hostname)
+
+# 自动备份
+mkdir -p $HOME/.hermes/scripts
+cat > $HOME/.hermes/scripts/auto-backup.sh << 'EOF'
+#!/bin/bash
+tar czf $HOME/.hermes/backups/daily/$(date +%Y%m%d).tar.gz \
+  $HOME/.hermes/SOUL.md \
+  $HOME/.hermes/memories/ \
+  $HOME/Documents/ObsidianVault/ 2>/dev/null
+EOF
+chmod +x $HOME/.hermes/scripts/auto-backup.sh
+
+# 显示访问 URL
+echo ""
+echo -e "${GREEN}${BOLD}===========================================${NC}"
+echo -e "${GREEN}${BOLD}  ✅ 路由器装好!${NC}"
+echo -e "${GREEN}${BOLD}===========================================${NC}"
+echo ""
+echo -e "${CYAN}${BOLD}客户访问 URL:${NC}"
+echo "  http://$HOSTNAME.local:$HERMES_PORT"
+echo "  http://$LAN_IP:$HERMES_PORT"
+echo "  http://hermes.local:$HERMES_PORT"
+echo ""
+echo -e "${CYAN}${BOLD}路由器信息:${NC}"
+echo "  IP: $LAN_IP"
+echo "  Hostname: $HOSTNAME"
+echo "  Port: $HERMES_PORT"
+echo ""
+echo -e "${CYAN}${BOLD}下一步 (给客户机器):${NC}"
+echo "  客户机器跑 install-smart-client.sh"
+echo "  (只装 Chrome + Obsidian, 不装 Hermes)"
+echo ""
+echo -e "${CYAN}${BOLD}自动备份:${NC} 每天 03:00"
+echo ""
+echo -e "${GREEN}享受智能!${NC}"

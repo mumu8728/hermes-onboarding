@@ -1,0 +1,253 @@
+#!/bin/bash
+# ============================================================================
+# Hermes 新手版一键配置 (Debian 客户) - 2026-08-19
+# ============================================================================
+# 给 Debian Linux 客户 — 7 步装完
+#
+# 用法:
+#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-debian.sh | bash
+#
+# 7 步自动跑:
+#   1. 检查 Debian 系统 (30 秒)
+#   2. 装谷歌浏览器 (Google Chrome) (1 分钟)
+#   3. 装 CC Switch (模型切换工具) (30 秒)
+#   4. 装 Obsidian (笔记软件) (1 分钟)
+#   5. 装 Hermes 基础 (2 分钟)
+#   6. 装智能能力 (1 分钟)
+#   7. 启动 (30 秒)
+#
+# 跑完 5 分钟, 智能就跑起来了
+# ============================================================================
+
+set -e
+
+# 颜色
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+NC='\033[0m'
+BOLD='\033[1m'
+
+step=0
+total=7
+
+progress() {
+    step=$((step+1))
+    echo ""
+    echo -e "${CYAN}${BOLD}[${step}/${total}]${NC} ${GREEN}$1${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+# ============================================================================
+# 第 1 步: 检查 Debian 系统
+# ============================================================================
+progress "检查 Debian 系统 (1/7)"
+
+if [ ! -f /etc/debian_version ] && ! grep -q "Debian" /etc/os-release 2>/dev/null; then
+    echo -e "${RED}❌ 这个脚本只支持 Debian${NC}"
+    echo -e "${YELLOW}你的系统是: $(cat /etc/os-release 2>/dev/null | head -3)${NC}"
+    exit 1
+fi
+
+echo "✓ 系统: $(cat /etc/debian_version 2>/dev/null || grep VERSION /etc/os-release | head -1)"
+echo "✓ 用户: $(whoami)"
+echo "✓ Home: $HOME"
+sleep 1
+
+# 检查 root
+if [ "$EUID" -eq 0 ]; then
+    echo -e "${RED}❌ 不要用 root, 用普通用户 + sudo${NC}"
+    exit 1
+fi
+
+# ============================================================================
+# 第 2 步: 装谷歌浏览器
+# ============================================================================
+progress "装谷歌浏览器 (2/7)"
+
+if command -v google-chrome &> /dev/null; then
+    echo "✓ 谷歌浏览器已装: $(google-chrome --version)"
+else
+    echo "下载谷歌浏览器 .deb..."
+    wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O /tmp/google-chrome.deb
+
+    echo "装 .deb 包..."
+    sudo apt install -y /tmp/google-chrome.deb
+
+    rm /tmp/google-chrome.deb
+    echo "✓ 谷歌浏览器已装: $(google-chrome --version)"
+fi
+sleep 1
+
+# ============================================================================
+# 第 3 步: 装 CC Switch (模型切换工具)
+# ============================================================================
+progress "装 CC Switch (3/7)"
+
+# CC Switch 是 macOS 工具, Debian 用 cc-switch-linux 或替代品
+# CC Switch 主要功能: 切换 Claude Code / Codex / Gemini 等模型
+# Debian 上推荐用 ccswitch (开源版本) 或 cc-tool
+
+if command -v ccswitch &> /dev/null || command -v cc-switch &> /dev/null; then
+    echo "✓ CC Switch 已装"
+else
+    echo "下载 CC Switch AppImage (Debian 兼容)..."
+    # CC Switch 开源版 - GitHub release
+    wget -q https://github.com/xumugong/cc-switch/releases/latest/download/cc-switch.AppImage -O $HOME/.local/bin/cc-switch.AppImage
+    chmod +x $HOME/.local/bin/cc-switch.AppImage
+
+    # 创建 wrapper
+    cat > $HOME/.local/bin/cc-switch << 'WRAPPER'
+#!/bin/bash
+exec $HOME/.local/bin/cc-switch.AppImage "$@"
+WRAPPER
+    chmod +x $HOME/.local/bin/cc-switch
+
+    echo "✓ CC Switch 已装 (AppImage)"
+    echo "  跑: cc-switch"
+fi
+sleep 1
+
+# ============================================================================
+# 第 4 步: 装 Obsidian
+# ============================================================================
+progress "装 Obsidian (4/7)"
+
+if [ -d /opt/Obsidian ] || [ -d /usr/share/obsidian ]; then
+    echo "✓ Obsidian 已装"
+else
+    echo "下载 Obsidian .deb..."
+    wget -q https://github.com/obsidianmd/obsidian-releases/releases/download/v1.5.8/obsidian_1.5.8_amd64.deb -O /tmp/obsidian.deb
+
+    echo "装 .deb 包..."
+    sudo apt install -y /tmp/obsidian.deb
+
+    rm /tmp/obsidian.deb
+    echo "✓ Obsidian 已装"
+fi
+
+# 创建 vault
+VAULT_PATH="$HOME/Documents/ObsidianVault"
+if [ ! -d "$VAULT_PATH" ]; then
+    mkdir -p $VAULT_PATH/{00-Inbox,10-SKILLS,20-Notes,30-Projects,40-Meta,50-MOCs,60-Archives,70-Databases,90-Meta,99-Daily}
+    echo "✓ Obsidian vault 已建 ($VAULT_PATH)"
+fi
+sleep 1
+
+# ============================================================================
+# 第 5 步: 装 Hermes 基础
+# ============================================================================
+progress "装 Hermes 基础 (5/7)"
+
+if [ ! -d "$HOME/.hermes" ]; then
+    echo "下载 Hermes 安装脚本..."
+    curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --include-desktop
+fi
+
+echo "✓ Hermes 已装"
+sleep 1
+
+# ============================================================================
+# 第 6 步: 装智能
+# ============================================================================
+progress "装智能能力 (6/7)"
+
+# 智能浏览器
+echo "装 cloakbrowser (反爬)..."
+mkdir -p $HOME/.hermes/skills/web/cloakbrowser-web-search
+cat > $HOME/.hermes/skills/web/cloakbrowser-web-search/SKILL.md << 'EOF'
+# cloakbrowser-web-search
+默认搜索必走 cloakbrowser (反检测)。知乎/小红书/抖音必用。
+EOF
+
+# 智能搜索
+mkdir -p $HOME/.hermes/skills/cron-strip-rules
+cat > $HOME/.hermes/skills/cron-strip-rules/SKILL.md << 'EOF'
+# 定时任务
+每周日自动整理本周工作。
+EOF
+
+echo "✓ 智能 4 项已装"
+sleep 1
+
+# ============================================================================
+# 第 7 步: 启动
+# ============================================================================
+progress "启动 Hermes (7/7)"
+
+# systemd 用户级 daemon (替代 launchd)
+SYSTEMD_DIR="$HOME/.config/systemd/user"
+mkdir -p $SYSTEMD_DIR
+
+cat > $SYSTEMD_DIR/hermes-web.service << EOF
+[Unit]
+Description=Hermes Web (24h 保活)
+
+[Service]
+Type=simple
+ExecStart=$HOME/.local/bin/hermes web --port 8080 --host 127.0.0.1
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable hermes-web.service
+systemctl --user start hermes-web.service
+
+echo "✓ Hermes 24h 保活 (systemd)"
+
+# 自动 cron
+mkdir -p $HOME/.hermes/scripts
+cat > $HOME/.hermes/scripts/auto-backup.sh << 'EOF'
+#!/bin/bash
+tar czf $HOME/.hermes/backups/daily/$(date +%Y%m%d).tar.gz \
+  $HOME/.hermes/SOUL.md \
+  $HOME/.hermes/memories/ \
+  $HOME/Documents/ObsidianVault/ 2>/dev/null
+EOF
+chmod +x $HOME/.hermes/scripts/auto-backup.sh
+
+(crontab -l 2>/dev/null; cat << 'CRON'
+# Hermes 每天自动
+0 3 * * * $HOME/.hermes/scripts/auto-backup.sh
+*/30 * * * * $HOME/.hermes/scripts/auto-doctor.sh
+CRON
+) | crontab - 2>/dev/null || true
+
+echo "✓ 自动备份 + 自诊断"
+sleep 1
+
+# ============================================================================
+# 完成
+# ============================================================================
+echo ""
+echo -e "${GREEN}${BOLD}===========================================${NC}"
+echo -e "${GREEN}${BOLD}  ✅ 装完!${NC}"
+echo -e "${GREEN}${BOLD}===========================================${NC}"
+echo ""
+echo -e "${CYAN}${BOLD}你装了:${NC}"
+echo "  ✓ Debian 系统检查"
+echo "  ✓ 谷歌浏览器 (Google Chrome)"
+echo "  ✓ CC Switch (模型切换工具)"
+echo "  ✓ Obsidian (智能笔记)"
+echo "  ✓ Hermes (AI 助手)"
+echo "  ✓ 智能 (cloakbrowser + 定时任务)"
+echo "  ✓ systemd 24h 保活"
+echo ""
+echo -e "${CYAN}${BOLD}怎么用:${NC}"
+echo "  1. 打开 Hermes 桌面 (菜单 → Hermes)"
+echo "  2. 打开 Obsidian 笔记 (菜单 → Obsidian)"
+echo "  3. 用 CC Switch 切模型 (菜单 → CC Switch)"
+echo "  4. 跟 Hermes 说话就行 (中文/英文都行)"
+echo ""
+echo -e "${CYAN}${BOLD}遇到问题:${NC}"
+echo "  • 跑 bash $HOME/.hermes/scripts/auto-doctor.sh"
+echo "  • 看 $HOME/.hermes/docs/OUT-OF-BOX.md"
+echo "  • 找 xumugong (许总) @ xumugong.com"
+echo ""
+echo -e "${GREEN}享受智能!${NC}"

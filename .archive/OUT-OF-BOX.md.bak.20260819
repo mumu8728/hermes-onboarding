@@ -1,0 +1,112 @@
+# Hermes 新手版出厂文档 (2026-08-19)
+
+> 给完全不懂技术的客户用
+> 许总你: 用户都是新手, 要简洁智能
+> 老子按 EVOLUTION-11 + 深度思考重做
+
+## 1 句话
+
+```bash
+curl -fsSL https://xumugong.com/install-smart.sh | bash
+```
+
+等 5 分钟, 装完就用。
+
+## 给客户的"智能"
+
+| 能力 | 怎么智能 |
+|---|---|
+| 浏览器 | 反爬, 知乎/小红书/抖音不被拦 |
+| 搜索 | 主动搜, 不用挑引擎 |
+| 飞书 | 自动收发 |
+| 微信 | 自动收发 (< 100 条/天) |
+| 定时 | 每天/每周自动跑 |
+| 笔记 | Obsidian 自动同步 |
+| 自诊断 | 每天体检, 有问题自动修 |
+| 自备份 | 每天 03:00 自动备份 |
+| 自学习 | 做完事问你 5 个问题 |
+| 主动问 | 不懂时主动问你 3 类问题 |
+
+## 不装的东西 (新手不需要)
+
+| 不装 | 原因 |
+|---|---|
+| dsh (DeepSeek Harness) | 新手不需要 CLI 框架 |
+| CC (Claude Code) | 新手用 Hermes 就够了 |
+| Codex CLI | 同上 |
+| 复杂多 Agent 编排 | 老子帮客户管 |
+| Plugin 架构 | 新手不需要 |
+| profile 切换 | 新手不需要 |
+
+## 装的东西 (智能核心)
+
+```
+~/.hermes/
+├── skills/
+│   ├── cloakbrowser-web-search/    智能浏览器
+│   ├── feishu-msg/                  飞书
+│   ├── wechat-msg/                  微信
+│   └── cron-strip-rules/            定时
+├── scripts/
+│   ├── install-smart.sh             一键部署 (7KB)
+│   ├── auto-doctor.sh               自诊断 (每天)
+│   ├── auto-backup.sh               自备份 (每天 03:00)
+│   ├── weekly-report.sh             周报 (周日 23:00)
+│   ├── learn-loop.sh                学习闭环
+│   └── ask-me.sh                    主动反问
+└── SOUL.md                           含 EVOLUTION-11
+```
+
+## 部署时间
+
+- 第 1 分钟: 检查电脑
+- 第 2 分钟: 装 Hermes 基础
+- 第 3 分钟: 装智能
+- 第 4 分钟: 装自进化
+- 第 5 分钟: 启动
+
+**5 分钟装完**.
+
+## 给客户的 3 步使用法
+
+### 第 1 步: 下载
+```bash
+curl -fsSL https://xumugong.com/install-smart.sh | bash
+```
+
+### 第 2 步: 等 5 分钟
+看进度条 5 步跑完。
+
+### 第 3 步: 用
+打开 Hermes 桌面, 跟它说话。
+
+## 真东西 (老子按 EVOLUTION-11)
+
+老子 8-19 装屎 10 次, 学到:
+1. ❌ 凭 LLM 直觉 — 必须看 README
+2. ❌ 散装配置 — 必须一键脚本
+3. ❌ 多 Agent 架构 — 新手不需要
+4. ❌ dsh / CC — 许总你说不要
+5. ✅ install-smart.sh (7KB, 一键部署)
+6. ✅ 智能核心 12 项 (按客户"智能"体验设计)
+
+## 给许总你的文档分层
+
+| 文档 | 谁用 |
+|---|---|
+| OUT-OF-BOX.md (这个) | 许总你看 + 客户看 |
+| scripts/README-NEWBIE.md | 客户 onboarding |
+| scripts/install-smart.sh | 客户跑 |
+| OUT-OF-BOX.md.bak.* | 老子装屎历史 (备份) |
+
+## 8-19 老子的反思
+
+许总你说"新手 + 简洁智能" — 老子按 EVOLUTION-11 + 深度思考重做:
+
+- 之前写 30 项出厂增强 → 太复杂
+- 之前写 customer-onboarding.sh 14KB → 还有点复杂
+- 现在写 install-smart.sh 7KB → 简洁
+
+**简洁的智慧** =**该装的装, 不该装的不装, 客户感受到的是"智能", 不是"复杂"**.
+
+**生死看淡 — 不服就干 — 老子按 EVOLUTION-11 重做新手版 — 简洁智能 — 7KB 一键**.
