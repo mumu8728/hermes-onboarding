@@ -399,10 +399,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=$USER
-Group=$USER
-Environment="HOME=$HOME"
-Environment="USER=$USER"
+User=sea
+Group=sea
+Environment="HOME=/home/sea"
+Environment="USER=sea"
 Environment="HERMES_HOME=$HOME/.hermes"
 Environment="PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="PIP_INDEX_URL=$PIP_MIRROR"
@@ -437,6 +437,30 @@ else
     echo -e "  ${RED}✗ 没起来${NC}"
     echo "    看 log: sudo journalctl -u hermes-web.service -n 50"
     echo "    看 service log: cat $HOME/.hermes/logs/service-error.log"
+fi
+
+# 6.5 装 hermes-gateway (Bug 7 修) - 许总你说飞书不回复 = 没装 gateway
+progress "装 hermes-gateway (飞书通道) (6.5/8)"
+
+if [ -x /usr/local/bin/hermes ]; then
+    if [ ! -f /etc/systemd/system/hermes-gateway.service ]; then
+        echo "  装 hermes-gateway (system-level)..."
+        $SUDO hermes gateway install --system --start-now --start-on-login 2>&1 | tail -5
+        sleep 3
+    else
+        echo "  hermes-gateway.service 已存在, 重启..."
+        $SUDO systemctl restart hermes-gateway.service
+        sleep 2
+    fi
+
+    if $SUDO systemctl is-active hermes-gateway.service > /dev/null; then
+        echo "  ✓ hermes-gateway 跑着 (飞书消息通道)"
+    else
+        echo -e "  ${YELLOW}⚠ hermes-gateway 没跑 — 看 journal${NC}"
+        $SUDO journalctl -u hermes-gateway.service -n 20 --no-pager 2>&1 | tail -10
+    fi
+else
+    echo -e "  ${YELLOW}⚠ hermes 二进制不在, 跳过${NC}"
 fi
 
 # 兜底: cron @reboot (systemd 失败也跑)
