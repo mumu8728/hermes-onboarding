@@ -126,6 +126,85 @@ sleep 1
 # 4. 装 Hermes 服务端
 progress "装 Hermes 服务端 (4/8)"
 
+# 装 feishu-cli (Go, 全飞书 API) - 出厂预装
+echo "  装 feishu-cli (飞书 CLI, 9 个 AI 技能)..."
+if [ ! -x /usr/local/bin/feishu-cli ]; then
+    cd /tmp
+
+    # 1. 检测 OS + 架构 (按 EVOLUTION-11 看 install.sh)
+    OS_TYPE=$(uname -s | tr '[:upper:]' '[:lower:]')
+    case "$OS_TYPE" in
+        linux)  OS_TYPE="linux" ;;
+        darwin) OS_TYPE="darwin" ;;
+        *)      echo -e "  ${RED}✗ 不支持 $OS_TYPE${NC}"; cd /; return 1 ;;
+    esac
+
+    case "$(uname -m)" in
+        x86_64|amd64)  ARCH="amd64" ;;
+        aarch64|arm64) ARCH="arm64" ;;
+        *)             echo -e "  ${RED}✗ 不支持架构 $(uname -m)${NC}"; cd /; return 1 ;;
+    esac
+
+    # 2. 302 redirect 拿 tag (不消耗 API 配额)
+    FEISHU_VERSION=$(curl -sI "https://github.com/riba2534/feishu-cli/releases/latest" 2>/dev/null \
+        | grep -i '^location:' \
+        | head -1 \
+        | sed 's|.*/tag/\([^[:space:]]*\).*|\1|' \
+        | tr -d '\r\n')
+
+    if [ -z "$FEISHU_VERSION" ]; then
+        # fallback: API
+        FEISHU_VERSION=$(curl -fsSL "https://api.github.com/repos/riba2534/feishu-cli/releases/latest" 2>/dev/null \
+            | grep '"tag_name"' | head -1 \
+            | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+    fi
+
+    if [ -z "$FEISHU_VERSION" ]; then
+        echo -e "  ${YELLOW}⚠ 拿不到版本, 用 'latest' fallback${NC}"
+        FEISHU_VERSION="latest"
+    fi
+
+    BINARY="feishu-cli_${FEISHU_VERSION}_${OS_TYPE}-${ARCH}.tar.gz"
+    URL="https://github.com/riba2534/feishu-cli/releases/download/${FEISHU_VERSION}/${BINARY}"
+    echo "  下 $BINARY..."
+
+    # 3. 下载 + 装
+    wget -q "$URL" -O feishu-cli.tar.gz 2>/dev/null
+    if [ -s feishu-cli.tar.gz ]; then
+        tar xzf feishu-cli.tar.gz
+        # tar 里可能有 feishu-cli 或 feishu-cli_vX.Y.Z 文件
+        if [ -f feishu-cli ]; then
+            mv feishu-cli /usr/local/bin/feishu-cli
+            chmod +x /usr/local/bin/feishu-cli
+            echo "  ✓ feishu-cli 装好 ($(/usr/local/bin/feishu-cli --version 2>&1 | head -1))"
+        else
+            echo -e "  ${YELLOW}⚠ tar 没找到 feishu-cli 二进制${NC}"
+        fi
+    else
+        echo -e "  ${YELLOW}⚠ 下载失败 (用官方 install.sh)${NC}"
+        curl -fsSL https://raw.githubusercontent.com/riba2534/feishu-cli/main/install.sh | bash
+    fi
+    rm -f feishu-cli.tar.gz
+    cd /
+else
+    echo "  ✓ feishu-cli 已装"
+fi
+
+# 4. 装 feishu-cli 9 个 AI 技能 (跟 SKILL.md)
+if [ -x /usr/local/bin/feishu-cli ]; then
+    FEISHU_SKILLS_DIR="$HOME/.hermes/skills/feishu-cli"
+    mkdir -p "$FEISHU_SKILLS_DIR"
+
+    # 从仓库拷 (本地有就用本地的, 否则拉)
+    REPO_FEISHU_SKILLS="$(dirname "${BASH_SOURCE[0]}")/templates/skills/feishu-cli"
+    if [ -d "$REPO_FEISHU_SKILLS" ]; then
+        cp -r "$REPO_FEISHU_SKILLS"/* "$FEISHU_SKILLS_DIR/"
+        echo "  ✓ feishu-cli 9 个 AI 技能装好 (本地)"
+    else
+        echo -e "  ${YELLOW}⚠ 本地 templates/skills/feishu-cli 不在${NC}"
+    fi
+fi
+
 # pip 国内镜像
 export PIP_INDEX_URL="$PIP_MIRROR"
 
