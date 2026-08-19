@@ -172,9 +172,10 @@ if [ ! -x /usr/local/bin/feishu-cli ]; then
     wget -q "$URL" -O feishu-cli.tar.gz 2>/dev/null
     if [ -s feishu-cli.tar.gz ]; then
         tar xzf feishu-cli.tar.gz
-        # tar 里可能有 feishu-cli 或 feishu-cli_vX.Y.Z 文件
-        if [ -f feishu-cli ]; then
-            mv feishu-cli /usr/local/bin/feishu-cli
+        # tar 里有 feishu-cli_vX.Y.Z_<os>-<arch>/feishu-cli (带目录)
+        FEISHU_BIN=$(find . -name feishu-cli -type f -executable 2>/dev/null | head -1)
+        if [ -n "$FEISHU_BIN" ]; then
+            mv "$FEISHU_BIN" /usr/local/bin/feishu-cli
             chmod +x /usr/local/bin/feishu-cli
             echo "  ✓ feishu-cli 装好 ($(/usr/local/bin/feishu-cli --version 2>&1 | head -1))"
         else
