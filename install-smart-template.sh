@@ -108,27 +108,52 @@ else
 fi
 sleep 1
 
-# 3. 装 CC Switch + Obsidian
+# 3. 装 CC Switch + Obsidian (按 EVOLUTION-11 看 GitHub release)
 progress "装 CC Switch + Obsidian (3/8)"
 
-# CC Switch (AppImage)
+# 检测架构 (Bug 8 修 — amd64/arm64 分开装)
+ARCH_TYPE=$(uname -m)
+case "$ARCH_TYPE" in
+    x86_64|amd64)  CC_ARCH="amd64"; OBS_ARCH="amd64" ;;
+    aarch64|arm64) CC_ARCH="aarch64"; OBS_ARCH="arm64" ;;
+    *)             CC_ARCH="amd64"; OBS_ARCH="amd64" ;;
+esac
+echo "  架构: $ARCH_TYPE → CC Switch: $CC_ARCH, Obsidian: $OBS_ARCH"
+
+# CC Switch (AppImage — amd64 通用, arm64 用 aarch64 版)
 mkdir -p $HOME/.local/bin
-wget -q https://github.com/xumugong/cc-switch/releases/latest/download/cc-switch.AppImage -O $HOME/.local/bin/cc-switch.AppImage 2>/dev/null && {
+CC_URL="https://github.com/xumugong/cc-switch/releases/latest/download/cc-switch_${CC_ARCH}.AppImage"
+wget -q "$CC_URL" -O $HOME/.local/bin/cc-switch.AppImage 2>/dev/null && {
     chmod +x $HOME/.local/bin/cc-switch.AppImage
     cat > $HOME/.local/bin/cc-switch << 'WRAPPER'
 #!/bin/bash
 exec $HOME/.local/bin/cc-switch.AppImage "$@"
 WRAPPER
     chmod +x $HOME/.local/bin/cc-switch
-    echo "  ✓ CC Switch 装好"
-} || echo "  ⚠ CC Switch 装失败 (可能没 GitHub 访问)"
+    echo "  ✓ CC Switch 装好 ($CC_ARCH)"
+} || echo "  ⚠ CC Switch 装失败 (网络/架构)"
 
-# Obsidian
-wget -q https://github.com/obsidianmd/obsidian-releases/releases/download/v1.5.8/obsidian_1.5.8_amd64.deb -O /tmp/obsidian.deb 2>/dev/null && {
-    $SUDO apt install -y /tmp/obsidian.deb
-    rm /tmp/obsidian.deb
-    echo "  ✓ Obsidian 装好"
-} || echo "  ⚠ Obsidian 装失败 (可能没 GitHub 访问)"
+# Obsidian (按架构装)
+if [ "$OBS_ARCH" = "amd64" ]; then
+    # amd64: 官方 .deb
+    wget -q https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian_amd64.deb -O /tmp/obsidian.deb 2>/dev/null && {
+        $SUDO apt install -y /tmp/obsidian.deb 2>&1 | tail -3
+        rm /tmp/obsidian.deb
+        echo "  ✓ Obsidian 装好 (amd64 .deb)"
+    } || echo "  ⚠ Obsidian 装失败 (amd64)"
+else
+    # arm64: Obsidian 官方只 amd64, 用 AppImage fallback
+    echo "  arm64: 用 AppImage (Obsidian 官方无 arm64)"
+    wget -q https://github.com/obsidianmd/obsidian-releases/releases/latest/download/Obsidian_latest_aarch64.AppImage -O $HOME/.local/bin/obsidian.AppImage 2>/dev/null && {
+        chmod +x $HOME/.local/bin/obsidian.AppImage
+        cat > $HOME/.local/bin/obsidian << 'OBS_WRAPPER'
+#!/bin/bash
+exec $HOME/.local/bin/obsidian.AppImage "$@"
+OBS_WRAPPER
+        chmod +x $HOME/.local/bin/obsidian
+        echo "  ✓ Obsidian 装好 (arm64 AppImage)"
+    } || echo "  ⚠ Obsidian arm64 AppImage 装失败"
+fi
 
 # 创建 Obsidian vault
 VAULT_PATH="$HOME/Documents/ObsidianVault"
