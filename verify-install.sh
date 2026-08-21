@@ -111,6 +111,23 @@ check "hermes MiniMax provider 装" "[ -d /home/debian/.hermes/hermes-agent/plug
 check "hermes OpenRouter provider 装" "[ -d /home/debian/.hermes/hermes-agent/plugins/model-providers/openrouter ]"
 check "hermes DeepSeek provider 装" "[ -d /home/debian/.hermes/hermes-agent/plugins/model-providers/deepseek ]"
 
+# EVOLUTION-26 — 本地模型禁止 (默认走线上 API)
+echo ""
+echo "--- 本地模型检查 (EVOLUTION-26: 一般情况下拒绝跑本地模型) ---"
+LOCAL_MODEL_INSTALLED=0
+for tool in ollama vllm llama.cpp; do
+    if which $tool >/dev/null 2>&1; then
+        echo -e "  ${RED}✗${NC} 本地模型 $tool 已装 (违反 EVOLUTION-26, 走线上 API)"
+        FAIL=$((FAIL+1))
+        LOCAL_MODEL_INSTALLED=1
+    fi
+done
+if [ $LOCAL_MODEL_INSTALLED -eq 0 ]; then
+    echo -e "  ${GREEN}✓${NC} 无本地模型 (Ollama/vLLM/llama.cpp 都没装, 走线上 API)"
+    PASS=$((PASS+1))
+fi
+check "model.provider 是线上 API (minimax/openrouter/deepseek)" "grep -qE 'provider: (minimax|openrouter|deepseek|openai|anthropic)' /home/debian/.hermes/config.yaml"
+
 echo ""
 echo "--- 监控 ---"
 check "health-check.sh 装" "[ -x /home/debian/.local/bin/health-check.sh ]"
