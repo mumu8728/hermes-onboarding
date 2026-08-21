@@ -129,6 +129,8 @@ check "ad-spillover-evaluation" "[ -d /home/debian/.hermes/skills/business/ad-sp
 check "factory-group-no-thinking" "[ -d /home/debian/.hermes/skills/business/factory-group-no-thinking ]"
 check "feishu-cli 9 个 AI 技能" "[ \$(ls /home/debian/.hermes/skills/feishu-cli/*.md 2>/dev/null | wc -l) -ge 9 ]"
 check "web (cloakbrowser / crawl4ai / firecrawl)" "[ -d /home/debian/.hermes/skills/web/cloakbrowser-web-search ]"
+check "wechat-msg skill (官方 Weixin docs)" "[ -s /home/debian/.hermes/skills/wechat-msg/SKILL.md ]"
+check "wechat-msg skill 内容 (实战经验 ≥50 行)" "[ \$(wc -l < /home/debian/.hermes/skills/wechat-msg/SKILL.md) -ge 50 ]"
 
 echo ""
 echo "--- 汇总 ---"
