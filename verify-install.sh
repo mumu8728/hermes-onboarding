@@ -56,10 +56,11 @@ check "hermes binary" "[ -x /home/debian/.hermes/hermes-agent/venv/bin/hermes ] 
 check "feishu-cli binary" "[ -x /usr/local/bin/feishu-cli ]"
 check "google-chrome" "which google-chrome"
 check "fcitx5 (中文输入法)" "which fcitx5"
-check "Obsidian AppImage" "[ -s /home/debian/.local/bin/obsidian.AppImage ]"
-check "FUSE 库 (Obsidian 要)" "ldconfig -p | grep -q libfuse.so.2"
-check "node (Hermes CLI 要)" "which node"
-check "npx" "which npx"
+check "Obsidian (官网 v1.13.7)" "dpkg -l | grep -q '^ii.*obsidian.*1\.13'" || [ -s /home/debian/.local/bin/obsidian.AppImage ]
+check "CC Switch (官方 farion1231/cc-switch v3.20)" "dpkg -l | grep -q '^ii.*cc-switch'" || [ -s /home/debian/.local/bin/cc-switch.AppImage ]
+check "FUSE 库 (Obsidian AppImage 要)" "dpkg -l | grep -q libfuse2"
+check "node (Hermes CLI 要)" "[ -x /home/debian/.hermes/node/bin/node ]"
+check "npx" "[ -x /home/debian/.hermes/node/bin/npx ]"
 
 echo ""
 echo "--- feishu-cli 9 个 AI 技能 ---"
