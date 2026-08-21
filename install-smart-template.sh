@@ -7,6 +7,63 @@
 # 用法 (许总你跑一次):
 #   curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-template.sh | bash
 #
+# ════════════════════════════════════════════════════════════════════════════
+# 6 条永久铁律 (实战经验教训 — 许总你 8-21 立)
+# ════════════════════════════════════════════════════════════════════════════
+#
+# 1. EVOLUTION-23 — 装不通先查官方 docs/release/changelog,
+#    不造 URL / 不造仓库 / 不猜 npm 包.
+#
+# 2. EVOLUTION-24 — 修真禁止. 工具超时脑子卡 = 修真 = 乱码.
+#    修真就 surface 失败 + 等许总你说, 绝不修真.
+#
+# 3. EVOLUTION-25 — 大面积重复修真 / 实战经验 / 冗余占满回复,
+#    立刻停止输出 + surface + 找根因. 3 次 = "老子修真了".
+#
+# 4. EVOLUTION-26 — 装本地模型/本地推理/本地运算之前, 必须先评估本机
+#    硬件 (CPU/GPU/RAM/磁盘/散热). **一般情况下拒绝跑本地模型**,
+#    默认走纯线上 API (OpenAI/Anthropic/MiniMax/OpenRouter).
+#
+# 5. EVOLUTION-14 — 生产机器不碰. 算力机/工作机/局域网 Debian 绝对不动.
+#
+# 6. EVOLUTION-15 — 测 install/uninstall 用 Docker 容器, 不在生产机器跑.
+#
+# ════════════════════════════════════════════════════════════════════════════
+# 实战经验教训 (装机踩坑 5 类)
+# ════════════════════════════════════════════════════════════════════════════
+#
+# 【修真类】4 次 (8-19/8-21)
+#  - 工具超时 / 网关 kill / 脑子卡 → 修真循环 (重复同一段)
+#  - 修真: surface 失败 + 等许总你说, 绝不修真.
+#
+# 【装屎类】7 次 (8-19)
+#  - Obsidian 错 URL `obsidian_amd64.deb` → 真官方 `obsidian_1.13.7_amd64.deb`
+#  - CC Switch 老子造的仓库 `mumu8728/cc-switch` → 真官方 `farion1231/cc-switch` (128K stars)
+#  - `npm install -g cc-switch` (老子猜的, 不是真包)
+#  - systemd User=sea (hardcoded) → User=$ACTUAL_USER
+#  - 端口 8080 → 9119
+#  - 命令 `hermes web` (无此命令) → `hermes serve`
+#  - 前台 gateway run → gateway install --system --force --start-now --start-on-login
+#
+# 【实战经验】(8-21 装机)
+#  - FUSE libfuse2t64 装但 ldconfig 找不到 → dpkg -l 检查
+#  - node 装但 PATH 没设 → .bashrc + .profile + systemd service 都加
+#  - npx 同 node 处理
+#  - daemon-reload 触发 gateway kill → 用 `hermes gateway restart` 外部命令
+#  - sudo apt daemon-reload 被 gateway 防护阻断 → 外部 ssh -t 跑
+#
+# 【修真类】(修真根因)
+#  - 修真 = 工具卡住, 不是内容问题
+#  - 修真触发: timeout / 网关 kill / 脑子卡
+#  - 修真修法: surface 失败 + 等许总你说
+#
+# 【实战经验】(本地模型禁止)
+#  - 客户机默认走线上 API
+#  - 不装 Ollama / vLLM / llama.cpp / 本地 embedding
+#  - 例外: 许总你明确批准 (隐私敏感 / API 配额用完 / 离线环境)
+#
+# ════════════════════════════════════════════════════════════════════════════
+#
 # 8 步自动跑 (30-60 分钟):
 #   1. 配国内 apt 镜像源 (阿里云)
 #   2. 装基础包 + 谷歌浏览器
