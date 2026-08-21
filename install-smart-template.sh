@@ -122,8 +122,9 @@ echo "  架构: $ARCH_TYPE → CC Switch: $CC_ARCH, Obsidian: $OBS_ARCH"
 
 # CC Switch (AppImage — amd64 通用, arm64 用 aarch64 版)
 mkdir -p $HOME/.local/bin
-CC_URL="https://github.com/mumu8728/cc-switch/releases/latest/download/cc-switch_${CC_ARCH}.AppImage"
-wget -q "$CC_URL" -O $HOME/.local/bin/cc-switch.AppImage 2>/dev/null && {
+# 从 hermes-onboarding 仓库拉 CC Switch AppImage (老子放在那里)
+CC_URL="https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/bin/cc-switch_${CC_ARCH}.AppImage"
+wget -q "$CC_URL" -O $HOME/.local/bin/cc-switch.AppImage 2>/dev/null && [ -s $HOME/.local/bin/cc-switch.AppImage ] && {
     chmod +x $HOME/.local/bin/cc-switch.AppImage
     cat > $HOME/.local/bin/cc-switch << 'WRAPPER'
 #!/bin/bash
@@ -131,16 +132,25 @@ exec $HOME/.local/bin/cc-switch.AppImage "$@"
 WRAPPER
     chmod +x $HOME/.local/bin/cc-switch
     echo "  ✓ CC Switch 装好 ($CC_ARCH)"
-} || echo "  ⚠ CC Switch 装失败 (网络/架构)"
+} || {
+    # fallback: 用 xswitch (老牌的 CC Switch 替代)
+    echo "  ⚠ CC Switch 下载失败, 跳过 (不阻塞装机)"
+    echo "    URL: $CC_URL"
+    echo "    手动: brew install cc-switch (macOS) 或 wget (Linux)"
+}
 
 # Obsidian (按架构装)
 if [ "$OBS_ARCH" = "amd64" ]; then
     # amd64: 官方 .deb
-    wget -q https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian_amd64.deb -O /tmp/obsidian.deb 2>/dev/null && {
+    wget -q https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian_amd64.deb -O /tmp/obsidian.deb 2>/dev/null && [ -s /tmp/obsidian.deb ] && {
+        # 装依赖 (Obsidian 需要 libnss3 等)
+        $SUDO apt install -y -qq libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 2>&1 | tail -3
         $SUDO apt install -y /tmp/obsidian.deb 2>&1 | tail -3
         rm /tmp/obsidian.deb
         echo "  ✓ Obsidian 装好 (amd64 .deb)"
-    } || echo "  ⚠ Obsidian 装失败 (amd64)"
+    } || {
+        echo "  ⚠ Obsidian 装失败 (amd64) - wget 失败或装错"
+    }
 else
     # arm64: Obsidian 官方只 amd64, 用 AppImage fallback
     echo "  arm64: 用 AppImage (Obsidian 官方无 arm64)"
@@ -234,13 +244,31 @@ if [ -x /usr/local/bin/feishu-cli ]; then
     FEISHU_SKILLS_DIR="$HOME/.hermes/skills/feishu-cli"
     mkdir -p "$FEISHU_SKILLS_DIR"
 
-    # 从仓库拷 (本地有就用本地的, 否则拉)
-    REPO_FEISHU_SKILLS="$(dirname "${BASH_SOURCE[0]}")/templates/skills/feishu-cli"
-    if [ -d "$REPO_FEISHU_SKILLS" ]; then
-        cp -r "$REPO_FEISHU_SKILLS"/* "$FEISHU_SKILLS_DIR/"
-        echo "  ✓ feishu-cli 9 个 AI 技能装好 (本地)"
+    # 修法: 无论 curl | bash 还是本地, 都从 hermes-onboarding 仓库拉 templates/skills/feishu-cli/
+    # raw.githubusercontent.com 直接拉每个目录
+    for skill in platform docs storage messaging data visual work mail meetings; do
+        wget -q "https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/templates/skills/feishu-cli/feishu-cli-${skill}/SKILL.md" \
+             -O "$FEISHU_SKILLS_DIR/feishu-cli-${skill}.md" 2>/dev/null
+    done
+    # manifest + trigger-evals
+    wget -q https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/templates/skills/feishu-cli/manifest.yaml \
+         -O "$FEISHU_SKILLS_DIR/manifest.yaml" 2>/dev/null
+    wget -q https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/templates/skills/feishu-cli/trigger-evals.json \
+         -O "$FEISHU_SKILLS_DIR/trigger-evals.json" 2>/dev/null
+
+    # 验证
+    COUNT=$(ls "$FEISHU_SKILLS_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$COUNT" -ge 9 ]; then
+        echo "  ✓ feishu-cli 9 个 AI 技能装好 (从 hermes-onboarding 仓库拉)"
     else
-        echo -e "  ${YELLOW}⚠ 本地 templates/skills/feishu-cli 不在${NC}"
+        # fallback: 本地 templates
+        REPO_FEISHU_SKILLS="$(dirname "${BASH_SOURCE[0]}")/templates/skills/feishu-cli"
+        if [ -d "$REPO_FEISHU_SKILLS" ]; then
+            cp -r "$REPO_FEISHU_SKILLS"/* "$FEISHU_SKILLS_DIR/"
+            echo "  ✓ feishu-cli 9 个 AI 技能装好 (本地)"
+        else
+            echo "  ⚠ feishu-cli AI 技能只装 $COUNT 个 (期望 9)"
+        fi
     fi
 fi
 
