@@ -59,7 +59,7 @@ echo "  Chrome"
 
 # CC Switch (macOS)
 if [ ! -d "$HOME/.local/bin/cc-switch.app" ]; then
-    curl -fsSL https://github.com/xumugong/cc-switch/releases/latest/download/cc-switch_macOS.zip -o /tmp/cc-switch.zip
+    curl -fsSL https://github.com/mumu8728/cc-switch/releases/latest/download/cc-switch_macOS.zip -o /tmp/cc-switch.zip
     unzip -q /tmp/cc-switch.zip -d "$HOME/.local/bin/"
 fi
 echo "  CC Switch"

@@ -135,7 +135,7 @@ else
     # 没有本地模板就从 GitHub 拉
     echo "  ⚠ 本地模板不在, 从 GitHub 拉..."
     cd /tmp
-    git clone --depth=1 https://github.com/xumugong/hermes-onboarding.git 2>/dev/null || {
+    git clone --depth=1 https://github.com/mumu8728/hermes-onboarding.git 2>/dev/null || {
         echo "  ✗ GitHub 拉失败"
     }
     if [ -d /tmp/hermes-onboarding/templates/skills/feishu-cli ]; then

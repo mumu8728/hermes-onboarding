@@ -26,7 +26,7 @@ A: 不会。install-smart.sh 只装 / 跑, 不删用户文件。
 ### Q3: 我不想要 Obsidian 怎么办?
 A: 加 `--no-obsidian`:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart.sh | bash -s -- --no-obsidian
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart.sh | bash -s -- --no-obsidian
 ```
 
 ### Q4: 我不想要微信/飞书 MCP 怎么办?
@@ -52,7 +52,7 @@ A: 每周日 23:00 自动检查 (auto-update cron)。
 A: 
 - 看 `~/.hermes/hermes-onboarding/TROUBLESHOOTING.md`
 - 跑 `bash ~/.hermes/hermes-onboarding/test-smart.sh`
-- 找 @xumugong (许总) @ xumugong.com
+- 找 @mumu8728 (许总) @ mumu8728.com
 
 ## 给贡献者
 
@@ -99,7 +99,7 @@ A: 看 SOUL §15 第 11 条 (EVOLUTION-11 干事前看 README)。
 ### Q15: 这个项目能扩 Windows 吗?
 A: 能,加 `install-smart-windows.ps1`:
 ```powershell
-iex (irm https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-windows.ps1)
+iex (irm https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-windows.ps1)
 ```
 但要 WSL2 (官方推荐)。
 原生命 Windows: 待老子研究。
@@ -132,5 +132,5 @@ A: 必须。每次装屎后, 老子:
 
 ## 老子等许总你说
 
-有问题 / 建议 → 飞书 @xumugong (许总)
+有问题 / 建议 → 飞书 @mumu8728 (许总)
 紧急问题 → 看 TROUBLESHOOTING.md → 不行找许总你

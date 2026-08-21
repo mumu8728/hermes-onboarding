@@ -5,7 +5,7 @@
 # 卸载 Hermes + 智能 + Chrome / CC Switch / Obsidian
 #
 # 用法:
-#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/uninstall.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/uninstall.sh | bash
 #
 # 或带配置:
 #   bash uninstall.sh --keep-vault      # 保留 Obsidian vault

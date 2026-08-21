@@ -71,7 +71,7 @@
 ## §7 项目仓库地址
 
 - 本地: ~/.hermes/hermes-onboarding/
-- GitHub: xumugong/hermes-onboarding (许总你 push 后)
+- GitHub: mumu8728/hermes-onboarding (许总你 push 后)
 - EVOLUTION-12: 改 hermes-onboarding 必先 git pull, 优化后必 git push
 
 ## §8 容量治理 (80% 触发)

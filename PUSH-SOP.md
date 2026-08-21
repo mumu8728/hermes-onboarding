@@ -24,7 +24,7 @@ git commit -m "feat: 客户版一键配置 v0.1.0"
 
 ## Step 4: push (30 秒)
 ```bash
-git remote add origin git@github.com:xumugong/hermes-onboarding.git
+git remote add origin git@github.com:mumu8728/hermes-onboarding.git
 git branch -M main
 git push -u origin main
 ```
@@ -40,15 +40,15 @@ bash ~/.hermes/hermes-onboarding/verify.sh
 
 ```bash
 # 主命令 (新机一键装 Hermes)
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart.sh | bash
 
 # 带客户配置
-bash <(curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart.sh) \
   --client "客户A" \
   --feishu-app "cli_xxx"
 
 # 跳过 Obsidian
-bash <(curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart.sh) --no-obsidian
+bash <(curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart.sh) --no-obsidian
 ```
 
 ---
@@ -68,8 +68,8 @@ cat ~/.ssh/id_ed25519.pub
 
 ### 推不上去 (权限拒绝)
 - 确认 SSH key 加到 GitHub 了
-- 确认仓库 URL 对: `git@github.com:xumugong/hermes-onboarding.git`
-- 确认许总你的 GitHub 用户名是 `xumugong`
+- 确认仓库 URL 对: `git@github.com:mumu8728/hermes-onboarding.git`
+- 确认许总你的 GitHub 用户名是 `mumu8728`
 
 ### push 后还是 404
 - 确认 GitHub 仓库是 Public

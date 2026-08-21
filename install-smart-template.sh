@@ -5,7 +5,7 @@
 # 许总你家里的 1 台 Debian 机器, 装好后删 key, 硬盘对拷
 #
 # 用法 (许总你跑一次):
-#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-template.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-template.sh | bash
 #
 # 8 步自动跑 (30-60 分钟):
 #   1. 配国内 apt 镜像源 (阿里云)
@@ -122,7 +122,7 @@ echo "  架构: $ARCH_TYPE → CC Switch: $CC_ARCH, Obsidian: $OBS_ARCH"
 
 # CC Switch (AppImage — amd64 通用, arm64 用 aarch64 版)
 mkdir -p $HOME/.local/bin
-CC_URL="https://github.com/xumugong/cc-switch/releases/latest/download/cc-switch_${CC_ARCH}.AppImage"
+CC_URL="https://github.com/mumu8728/cc-switch/releases/latest/download/cc-switch_${CC_ARCH}.AppImage"
 wget -q "$CC_URL" -O $HOME/.local/bin/cc-switch.AppImage 2>/dev/null && {
     chmod +x $HOME/.local/bin/cc-switch.AppImage
     cat > $HOME/.local/bin/cc-switch << 'WRAPPER'
@@ -661,7 +661,7 @@ echo -e "${YELLOW}下一步:${NC}"
 echo "  1. 浏览器自动开 http://localhost:9119"
 echo "  2. 跟 Hermes 说话"
 echo ""
-echo -e "${CYAN}有问题: 飞书 @xumugong (许总)${NC}"
+echo -e "${CYAN}有问题: 飞书 @mumu8728 (许总)${NC}"
 RESET
 
 # 写 onboarding wizard 脚本
@@ -819,7 +819,7 @@ cat > $HOME/.hermes/memories/MEMORY.md << EOF
 ## §4 项目仓库
 
 - 本地: ~/.hermes/hermes-onboarding/
-- GitHub: xumugong/hermes-onboarding (许总你 push 后)
+- GitHub: mumu8728/hermes-onboarding (许总你 push 后)
 
 ## §5 onboarding 时间线
 

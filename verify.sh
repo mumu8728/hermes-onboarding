@@ -2,7 +2,7 @@
 # verify.sh - 验证 GitHub push 是否成功
 echo "=== 验证 GitHub push ==="
 
-REPO_URL="https://github.com/xumugong/hermes-onboarding"
+REPO_URL="https://github.com/mumu8728/hermes-onboarding"
 echo "1. 检查仓库存在..."
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$REPO_URL")
 if [ "$HTTP_CODE" = "200" ]; then

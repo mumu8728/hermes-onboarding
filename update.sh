@@ -5,7 +5,7 @@
 # 升级到最新版 (从 GitHub 拉最新)
 #
 # 用法:
-#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/update.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/update.sh | bash
 #
 # 或本地:
 #   bash ~/.hermes/hermes-onboarding/update.sh
@@ -25,7 +25,7 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 BOLD='\033[1m'
 
-REPO="xumugong/hermes-onboarding"
+REPO="mumu8728/hermes-onboarding"
 BRANCH="main"
 LOCAL_DIR="$HOME/.hermes/hermes-onboarding"
 DRY_RUN=false

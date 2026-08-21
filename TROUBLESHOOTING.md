@@ -197,7 +197,7 @@ cat ~/.hermes/hermes-onboarding/CHANGELOG.md
 
 # 2. 卸载重装
 bash ~/.hermes/hermes-onboarding/uninstall.sh
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart.sh | bash
 ```
 
 ## 卸载不干净
@@ -252,8 +252,8 @@ launchctl kickstart -k com.deepseek.harness.web
 
 跑 `bash ~/.hermes/hermes-onboarding/verify.sh` 把日志给许总你看:
 
-- 微信/飞书: 找 @xumugong
-- GitHub Issues: https://github.com/xumugong/hermes-onboarding/issues
+- 微信/飞书: 找 @mumu8728
+- GitHub Issues: https://github.com/mumu8728/hermes-onboarding/issues
 
 ## 真东西 (按 EVOLUTION-12)
 

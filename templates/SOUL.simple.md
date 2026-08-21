@@ -76,5 +76,5 @@
 ## 12. EVOLUTION-12 (记住项目仓库)
 
 本地项目: ~/.hermes/hermes-onboarding/
-GitHub: xumugong/hermes-onboarding (许总你 push 后)
+GitHub: mumu8728/hermes-onboarding (许总你 push 后)
 任何"再次优化"必须走这仓库。

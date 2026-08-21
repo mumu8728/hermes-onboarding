@@ -135,7 +135,7 @@
 ssh root@template-machine
 
 # 4. 跑模板机脚本 (许总你家里的)
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-template.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-template.sh | bash
 
 # 5. 装完, 检查 key 都删了
 test ! -f ~/.hermes/.env && echo "OK: .env 删了"
