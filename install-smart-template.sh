@@ -165,49 +165,67 @@ case "$ARCH_TYPE" in
 esac
 echo "  架构: $ARCH_TYPE → CC Switch: $CC_ARCH, Obsidian: $OBS_ARCH"
 
-# CC Switch (AppImage — amd64 通用, arm64 用 aarch64 版)
+# CC Switch (按架构装) — 按 EVOLUTION-23 查官方 (farion1231/cc-switch, 128K stars)
 mkdir -p $HOME/.local/bin
-# 从 hermes-onboarding 仓库拉 CC Switch AppImage (老子放在那里)
-CC_URL="https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/bin/cc-switch_${CC_ARCH}.AppImage"
-wget -q "$CC_URL" -O $HOME/.local/bin/cc-switch.AppImage 2>/dev/null && [ -s $HOME/.local/bin/cc-switch.AppImage ] && {
-    chmod +x $HOME/.local/bin/cc-switch.AppImage
-    cat > $HOME/.local/bin/cc-switch << 'WRAPPER'
-#!/bin/bash
-exec $HOME/.local/bin/cc-switch.AppImage "$@"
-WRAPPER
-    chmod +x $HOME/.local/bin/cc-switch
-    echo "  ✓ CC Switch 装好 ($CC_ARCH)"
-} || {
-    # fallback: 用 xswitch (老牌的 CC Switch 替代)
-    echo "  ⚠ CC Switch 下载失败, 跳过 (不阻塞装机)"
-    echo "    URL: $CC_URL"
-    echo "    手动: brew install cc-switch (macOS) 或 wget (Linux)"
-}
+# 用 GitHub API 拿真 latest URL (按 EVOLUTION-23 查官方 release)
+LATEST_JSON=$(curl -fsSL "https://api.github.com/repos/farion1231/cc-switch/releases/latest" 2>/dev/null)
+case "$CC_ARCH" in
+    amd64)
+        CC_DEB_URL=$(echo "$LATEST_JSON" | python3 -c "import sys, json; d = json.load(sys.stdin); print([a['browser_download_url'] for a in d['assets'] if 'x86_64' in a['name'] and a['name'].endswith('.deb')][0])" 2>/dev/null || echo "")
+        ;;
+    aarch64)
+        CC_DEB_URL=$(echo "$LATEST_JSON" | python3 -c "import sys, json; d = json.load(sys.stdin); print([a['browser_download_url'] for a in d['assets'] if 'arm64' in a['name'] and a['name'].endswith('.deb')][0])" 2>/dev/null || echo "")
+        ;;
+    *)
+        CC_DEB_URL=$(echo "$LATEST_JSON" | python3 -c "import sys, json; d = json.load(sys.stdin); print([a['browser_download_url'] for a in d['assets'] if 'x86_64' in a['name'] and a['name'].endswith('.deb')][0])" 2>/dev/null || echo "")
+        ;;
+esac
 
-# Obsidian (按架构装)
+if [ -n "$CC_DEB_URL" ]; then
+    wget -q "$CC_DEB_URL" -O /tmp/cc-switch.deb 2>/dev/null && [ -s /tmp/cc-switch.deb ] && {
+        $SUDO apt install -y -qq libfuse2 2>&1 | tail -2
+        $SUDO apt install -y /tmp/cc-switch.deb 2>&1 | tail -3
+        rm /tmp/cc-switch.deb
+        echo "  ✓ CC Switch 装好 ($CC_ARCH, 官方 farion1231/cc-switch)"
+    } || {
+        echo "  ⚠ CC Switch 下载失败, 跳过 (不阻塞装机)"
+        echo "    URL: $CC_DEB_URL"
+        echo "    手动: https://github.com/farion1231/cc-switch/releases/latest"
+    }
+else
+    echo "  ⚠ CC Switch API 拿不到 (没网?)"
+    echo "    手动: https://github.com/farion1231/cc-switch/releases/latest"
+fi
+
+# Obsidian (按架构装) — 按 EVOLUTION-23 查官方 release API 拿真 URL
+LATEST_JSON=$(curl -fsSL "https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest" 2>/dev/null)
+OBS_VERSION=$(echo "$LATEST_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin)['tag_name'].lstrip('v'))" 2>/dev/null || echo "1.13.7")
+
 if [ "$OBS_ARCH" = "amd64" ]; then
-    # amd64: 官方 .deb
-    wget -q https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian_amd64.deb -O /tmp/obsidian.deb 2>/dev/null && [ -s /tmp/obsidian.deb ] && {
+    # amd64: 官方 .deb (按官方 release API 拿版本号)
+    OBS_DEB_URL="https://github.com/obsidianmd/obsidian-releases/releases/download/v${OBS_VERSION}/obsidian_${OBS_VERSION}_amd64.deb"
+    wget -q "$OBS_DEB_URL" -O /tmp/obsidian.deb 2>/dev/null && [ -s /tmp/obsidian.deb ] && {
         # 装依赖 (Obsidian 需要 libnss3 等)
         $SUDO apt install -y -qq libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 2>&1 | tail -3
         $SUDO apt install -y /tmp/obsidian.deb 2>&1 | tail -3
         rm /tmp/obsidian.deb
-        echo "  ✓ Obsidian 装好 (amd64 .deb)"
+        echo "  ✓ Obsidian 装好 (amd64 .deb, 官方 obsidianmd/obsidian-releases v$OBS_VERSION)"
     } || {
         echo "  ⚠ Obsidian 装失败 (amd64) - wget 失败或装错"
+        echo "    URL: $OBS_DEB_URL"
     }
 else
     # arm64: Obsidian 官方只 amd64, 用 AppImage fallback
-    echo "  arm64: 用 AppImage (Obsidian 官方无 arm64)"
-    wget -q https://github.com/obsidianmd/obsidian-releases/releases/latest/download/Obsidian_latest_aarch64.AppImage -O $HOME/.local/bin/obsidian.AppImage 2>/dev/null && {
+    OBS_APPIMAGE_URL="https://github.com/obsidianmd/obsidian-releases/releases/download/v${OBS_VERSION}/Obsidian-${OBS_VERSION}-arm64.AppImage"
+    wget -q "$OBS_APPIMAGE_URL" -O $HOME/.local/bin/obsidian.AppImage 2>/dev/null && {
         chmod +x $HOME/.local/bin/obsidian.AppImage
         cat > $HOME/.local/bin/obsidian << 'OBS_WRAPPER'
 #!/bin/bash
 exec $HOME/.local/bin/obsidian.AppImage "$@"
 OBS_WRAPPER
         chmod +x $HOME/.local/bin/obsidian
-        echo "  ✓ Obsidian 装好 (arm64 AppImage)"
-    } || echo "  ⚠ Obsidian arm64 AppImage 装失败"
+        echo "  ✓ Obsidian 装好 (arm64 AppImage, 官方 v$OBS_VERSION)"
+    } || echo "  ⚠ Obsidian arm64 AppImage 装失败 (URL: $OBS_APPIMAGE_URL)"
 fi
 
 # 创建 Obsidian vault
