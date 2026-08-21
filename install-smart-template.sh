@@ -456,14 +456,21 @@ progress "配 systemd 24h 保活 (6/8)"
 # ⚠️ 关键修正: 用 system-level service, 不靠 user 登录
 #   - 文件: /etc/systemd/system/hermes-web.service (不是 user)
 #   - 跑: systemctl (不是 --user)
-#   - User= 显式指定
+#   - User= 显式指定 (用 ACTUAL_USER, 不是 hardcoded 'sea')
 #   - 不依赖用户登录, 局域网 Debian 机器开机就启动
 
-# 找 hermes 二进制真实路径 (绝对路径!)
+# 检测实际用户 (不是 root)
+ACTUAL_USER="${SUDO_USER:-$USER}"
+if [ "$ACTUAL_USER" = "root" ]; then
+    ACTUAL_USER="debian"
+fi
+echo "  客户机用户: $ACTUAL_USER"
+
+# 找 hermes 二进制真实路径 (绝对路径!) — Bug 14 修
 HERMES_BIN=""
-for path in "$HOME/.hermes/hermes-agent/.venv/bin/hermes" \
-            "$HOME/.local/bin/hermes" \
-            "$HOME/.hermes/.local/bin/hermes"; do
+for path in "/home/$ACTUAL_USER/.hermes/hermes-agent/venv/bin/hermes" \
+            "/home/$ACTUAL_USER/.hermes/hermes-agent/.venv/bin/hermes" \
+            "$HOME/.local/bin/hermes"; do
     if [ -x "$path" ]; then
         HERMES_BIN="$path"
         echo "  ✓ 找到 hermes: $HERMES_BIN"
@@ -473,22 +480,63 @@ done
 
 if [ -z "$HERMES_BIN" ]; then
     echo -e "  ${YELLOW}⚠ hermes 二进制找不到, 用 fallback${NC}"
-    HERMES_BIN="$HOME/.local/bin/hermes"
+    HERMES_BIN="/home/$ACTUAL_USER/.hermes/hermes-agent/venv/bin/hermes"
 fi
 
 # 找 WorkingDirectory 真实路径
 HERMES_WD=""
-for path in "$HOME/.hermes/hermes-agent" "$HOME/.hermes"; do
+for path in "/home/$ACTUAL_USER/.hermes/hermes-agent" \
+            "/home/$ACTUAL_USER/.hermes"; do
     if [ -d "$path" ]; then
         HERMES_WD="$path"
         break
     fi
 done
 
-# 确保 logs 目录存在 + 客户用户能写
-mkdir -p $HOME/.hermes/logs
+# 确保 logs 目录存在 + 客户用户能写 (Bug 17 修: chmod)
+mkdir -p /home/$ACTUAL_USER/.hermes/logs
+$SUDO chown -R $ACTUAL_USER:$ACTUAL_USER /home/$ACTUAL_USER/.hermes/logs
+
+# 配 dashboard.basic_auth (Bug 17 修 — 0.0.0.0 必须配)
+# 生成密码 hash (用 hermes 自己的 hash 函数)
+HERMES_VENV_DIR=$(dirname "$HERMES_BIN")
+DASHBOARD_PASSWORD="hermes2026"
+DASHBOARD_HASH=$("$HERMES_VENV_DIR/python" -c "
+import sys
+sys.path.insert(0, '$HERMES_VENV_DIR/lib/python3.11/site-packages')
+try:
+    from plugins.dashboard_auth.basic import hash_password
+    print(hash_password('$DASHBOARD_PASSWORD'))
+except Exception as e:
+    print(f'ERROR: {e}')
+" 2>/dev/null | tail -1)
+
+if [[ "$DASHBOARD_HASH" == scrypt* ]]; then
+    # 加到 config.yaml
+    if [ -f /home/$ACTUAL_USER/.hermes/config.yaml ]; then
+        if ! grep -q "^dashboard:" /home/$ACTUAL_USER/.hermes/config.yaml; then
+            cat >> /home/$ACTUAL_USER/.hermes/config.yaml << EOF
+
+# Dashboard (老子装的, Bug 17 修)
+dashboard:
+  basic_auth:
+    username: admin
+    password_hash: $DASHBOARD_HASH
+EOF
+            $SUDO chown $ACTUAL_USER:$ACTUAL_USER /home/$ACTUAL_USER/.hermes/config.yaml
+            echo "  ✓ dashboard.basic_auth 配好 (admin/hermes2026)"
+        fi
+    fi
+else
+    echo -e "  ${YELLOW}⚠ hash 生成失败, 用 127.0.0.1 fallback${NC}"
+    HERMES_HOST="127.0.0.1"
+fi
+
+# 默认 host (0.0.0.0 需要 auth, 否则用 127.0.0.1)
+HERMES_HOST="${HERMES_HOST:-0.0.0.0}"
 
 # ⚠️ 关键: 写到 /etc/systemd/system/ (system-level, 不靠 user 登录)
+# Bug 14/15/16 修: User=sea → User=$ACTUAL_USER, 端口 8080 → 9119, 命令 web → serve
 $SUDO tee /etc/systemd/system/hermes-web.service > /dev/null << EOF
 [Unit]
 Description=Hermes Web (24h 保活, 局域网 Debian 机器)
@@ -497,20 +545,20 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=sea
-Group=sea
-Environment="HOME=/home/sea"
-Environment="USER=sea"
-Environment="HERMES_HOME=$HOME/.hermes"
-Environment="PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
+User=$ACTUAL_USER
+Group=$ACTUAL_USER
+Environment="HOME=/home/$ACTUAL_USER"
+Environment="USER=$ACTUAL_USER"
+Environment="HERMES_HOME=/home/$ACTUAL_USER/.hermes"
+Environment="PATH=$HERMES_VENV_DIR:/home/$ACTUAL_USER/.local/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="PIP_INDEX_URL=$PIP_MIRROR"
 WorkingDirectory=$HERMES_WD
-ExecStart=$HERMES_BIN web --host 0.0.0.0 --port $HERMES_PORT
+ExecStart=$HERMES_BIN serve --host $HERMES_HOST --port 9119
 Restart=always
 RestartSec=10
 TimeoutStartSec=0
-StandardOutput=append:$HOME/.hermes/logs/service.log
-StandardError=append:$HOME/.hermes/logs/service-error.log
+StandardOutput=append:/home/$ACTUAL_USER/.hermes/logs/service.log
+StandardError=append:/home/$ACTUAL_USER/.hermes/logs/service-error.log
 
 [Install]
 WantedBy=multi-user.target
@@ -524,32 +572,37 @@ $SUDO systemctl start hermes-web.service
 sleep 5
 
 if $SUDO systemctl is-active hermes-web.service > /dev/null; then
-    echo "  ✓ system-level systemd 24h 保活"
+    echo "  ✓ system-level systemd 24h 保活 (端口 9119)"
     echo ""
     echo "  验证开机自启 (局域网 Debian 机器):"
     echo "    sudo systemctl is-enabled hermes-web.service  # enabled"
     echo "    sudo systemctl status hermes-web.service"
+    echo "    curl -u admin:hermes2026 http://localhost:9119  # HTTP 200"
     echo ""
     echo "  测试重启: sudo reboot (开机后自动跑)"
 else
     echo -e "  ${RED}✗ 没起来${NC}"
     echo "    看 log: sudo journalctl -u hermes-web.service -n 50"
-    echo "    看 service log: cat $HOME/.hermes/logs/service-error.log"
+    echo "    看 service log: cat /home/$ACTUAL_USER/.hermes/logs/service-error.log"
 fi
 
-# 6.5 装 hermes-gateway (Bug 7 修) - 许总你说飞书不回复 = 没装 gateway
+# 6.5 装 hermes-gateway (Bug 7/18 修) - 许总你说飞书不回复 = 没装 gateway
 progress "装 hermes-gateway (飞书通道) (6.5/8)"
 
-if [ -x /usr/local/bin/hermes ]; then
+if [ -x "$HERMES_BIN" ]; then
     if [ ! -f /etc/systemd/system/hermes-gateway.service ]; then
-        echo "  装 hermes-gateway (system-level)..."
-        $SUDO hermes gateway install --system --start-now --start-on-login 2>&1 | tail -5
+        echo "  装 hermes-gateway (system-level, 用官方 gateway install)..."
+        # Bug 18 修: 用绝对路径, 不用 $SUDO hermes (PATH 可能没装)
+        $SUDO $HERMES_BIN gateway install --system --start-now --start-on-login 2>&1 | tail -5
         sleep 3
     else
         echo "  hermes-gateway.service 已存在, 重启..."
         $SUDO systemctl restart hermes-gateway.service
         sleep 2
     fi
+
+    # Bug 17 修: chmod logs 给 debian (gateway 用 sudo 装是 root user)
+    $SUDO chown -R $ACTUAL_USER:$ACTUAL_USER /home/$ACTUAL_USER/.hermes/logs
 
     if $SUDO systemctl is-active hermes-gateway.service > /dev/null; then
         echo "  ✓ hermes-gateway 跑着 (飞书消息通道)"
@@ -563,11 +616,11 @@ fi
 
 # 兜底: cron @reboot (systemd 失败也跑)
 mkdir -p $HOME/.hermes/scripts
-cat > $HOME/.hermes/scripts/hermes-start.sh << 'START'
+cat > $HOME/.hermes/scripts/hermes-start.sh << START
 #!/bin/bash
 # Hermes start (兜底, systemd 失败也跑)
 sleep 10  # 等网络起来
-exec $HOME/.hermes/hermes-agent/.venv/bin/hermes web --host 0.0.0.0 --port 8080
+exec $HERMES_BIN serve --host $HERMES_HOST --port 9119
 START
 chmod +x $HOME/.hermes/scripts/hermes-start.sh
 
