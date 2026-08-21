@@ -387,6 +387,35 @@ cat > $HOME/.hermes/skills/wechat-msg/SKILL.md << 'EOF'
 EOF
 echo "  ✓ 微信 MCP 已装"
 
+# 装 业务类核心技能 (按 EVOLUTION-23 实战经验, 许总你 14 年老板核心业务)
+echo ""
+echo "  装业务类核心技能 (按 EVOLUTION-23 实战经验):"
+BUSINESS_SKILLS=(
+    "individual-merchant-tax-advisor"   # 9 体户 + 15 抖店 + 季度报税
+    "merchant-rights-protection"        # 14 年老板主动维权
+    "legal-risk-precheck"               # 反爬 + 政策监控 + 法律预检
+    "natural-person-ecommerce-tax-cn"   # 闲鱼/拼多多卖货税务
+    "biz-research"                      # 市场/竞品调研
+    "ad-spillover-evaluation"           # 1688 + 抖音千川广告评估
+    "factory-group-no-thinking"         # 工厂群/管家群降噪
+)
+for skill in "${BUSINESS_SKILLS[@]}"; do
+    mkdir -p "$HOME/.hermes/skills/business/$skill"
+    cat > "$HOME/.hermes/skills/business/$skill/SKILL.md" << EOF
+# $skill
+业务类核心技能 (许总你 14 年老板实战经验必备)
+触发: 电商/税务/法律/广告/工厂群相关查询
+EOF
+done
+echo "  ✓ 7 个业务类核心技能占位已建 (装机后从许总你本机 scp 同步真 SKILL.md)"
+
+# 验证: 跑 hermes skills list 看 91 个 enabled (按 EVOLUTION-23 实战经验)
+echo ""
+echo "  验证: hermes skills list (实战经验)"
+if [ -x "$HERMES_BIN" ]; then
+    $HERMES_BIN skills list 2>&1 | grep -E "enabled" | tail -3 || echo "  ⚠ hermes skills list 跑不了"
+fi
+
 # 定时任务
 mkdir -p $HOME/.hermes/skills/cron-strip-rules
 cat > $HOME/.hermes/skills/cron-strip-rules/SKILL.md << 'EOF'

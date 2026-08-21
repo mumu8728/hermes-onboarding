@@ -110,6 +110,27 @@ check "health-check.sh 装" "[ -x /home/debian/.local/bin/health-check.sh ]"
 check "unattended-upgrades 装" "which unattended-upgrade"
 
 echo ""
+echo "--- 技能 (按 EVOLUTION-23 实战经验) ---"
+SKILL_COUNT=$(find /home/debian/.hermes/skills -name 'SKILL.md' -type f 2>/dev/null | wc -l)
+if [ "$SKILL_COUNT" -ge 80 ]; then
+    echo -e "  ${GREEN}✓${NC} 总技能数: $SKILL_COUNT (≥80 实战经验)"
+    PASS=$((PASS+1))
+else
+    echo -e "  ${RED}✗${NC} 总技能数: $SKILL_COUNT (期望 ≥80)"
+    FAIL=$((FAIL+1))
+fi
+check "business 类 (许总你 14 年老板实战经验必备)" "[ -d /home/debian/.hermes/skills/business ]"
+check "individual-merchant-tax-advisor" "[ -d /home/debian/.hermes/skills/business/individual-merchant-tax-advisor ]"
+check "merchant-rights-protection" "[ -d /home/debian/.hermes/skills/business/merchant-rights-protection ]"
+check "legal-risk-precheck" "[ -d /home/debian/.hermes/skills/business/legal-risk-precheck ]"
+check "natural-person-ecommerce-tax-cn" "[ -d /home/debian/.hermes/skills/business/natural-person-ecommerce-tax-cn ]"
+check "biz-research" "[ -d /home/debian/.hermes/skills/business/biz-research ]"
+check "ad-spillover-evaluation" "[ -d /home/debian/.hermes/skills/business/ad-spillover-evaluation ]"
+check "factory-group-no-thinking" "[ -d /home/debian/.hermes/skills/business/factory-group-no-thinking ]"
+check "feishu-cli 9 个 AI 技能" "[ \$(ls /home/debian/.hermes/skills/feishu-cli/*.md 2>/dev/null | wc -l) -ge 9 ]"
+check "web (cloakbrowser / crawl4ai / firecrawl)" "[ -d /home/debian/.hermes/skills/web/cloakbrowser-web-search ]"
+
+echo ""
 echo "--- 汇总 ---"
 echo "  ✓ PASS: $PASS"
 if [ "$FAIL" -gt 0 ]; then
