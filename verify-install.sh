@@ -55,7 +55,14 @@ echo "--- 软件 ---"
 check "hermes binary" "[ -x /home/debian/.hermes/hermes-agent/venv/bin/hermes ] || [ -x /usr/local/bin/hermes ]"
 check "feishu-cli binary" "[ -x /usr/local/bin/feishu-cli ]"
 check "google-chrome" "which google-chrome"
-check "fcitx5 (中文输入法)" "which fcitx5"
+# fcitx5 拼音输入法 — 5 维验证 (pkg / bin / conf / profile / autostart)
+# 8-21 实战教训: 之前只 check `which fcitx5` = 不够, 实战暴露拼音"装了但用不了"
+# (env vars 没配 + Autostart 缺失, fcitx5 进程在但开机不自启)
+check "fcitx5 pkg (官方)" "dpkg -l | grep -q '^ii.*fcitx5 '"
+check "fcitx5 binary" "which fcitx5"
+check "fcitx5 config (profile + pinyin.conf)" "[ -f /home/debian/.config/fcitx5/profile ] && [ -f /home/debian/.config/fcitx5/conf/pinyin.conf ]"
+check "fcitx5 env vars (官方 GTK_IM_MODULE)" "grep -q GTK_IM_MODULE=fcitx /etc/profile.d/fcitx5.sh 2>/dev/null || grep -q GTK_IM_MODULE /etc/profile.d/im-config_wayland.sh 2>/dev/null"
+check "fcitx5 XDG Autostart" "[ -f /home/debian/.config/autostart/fcitx5.desktop ]"
 check "Obsidian (官网 v1.13.7)" "dpkg -l | grep -q '^ii.*obsidian.*1\.13'" || [ -s /home/debian/.local/bin/obsidian.AppImage ]
 check "CC Switch (官方 farion1231/cc-switch v3.20)" "dpkg -l | grep -q '^ii.*cc-switch'" || [ -s /home/debian/.local/bin/cc-switch.AppImage ]
 check "FUSE 库 (Obsidian AppImage 要)" "dpkg -l | grep -q libfuse2"
