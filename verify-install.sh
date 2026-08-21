@@ -1,6 +1,6 @@
 #!/bin/bash
 # verify-install.sh - 装机验证脚本 (许总你说要)
-# 老子的 install-smart-template.sh 装机后, 跑这个验证 6 项
+# 老子的 install-smart-template.sh 装机后, 跑这个验证 22 项
 
 set -e
 
@@ -10,6 +10,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo "=== 装机验证 (许总你说要) ==="
+echo ""
+echo "⚠️  装机前必读: README.zh-CN.md (官方教程)"
+echo "   https://hermes-agent.nousresearch.com/docs/getting-started/installation"
 echo ""
 
 PASS=0
@@ -54,6 +57,9 @@ check "feishu-cli binary" "[ -x /usr/local/bin/feishu-cli ]"
 check "google-chrome" "which google-chrome"
 check "fcitx5 (中文输入法)" "which fcitx5"
 check "Obsidian AppImage" "[ -s /home/debian/.local/bin/obsidian.AppImage ]"
+check "FUSE 库 (Obsidian 要)" "ldconfig -p | grep -q libfuse.so.2"
+check "node (Hermes CLI 要)" "which node"
+check "npx" "which npx"
 
 echo ""
 echo "--- feishu-cli 9 个 AI 技能 ---"
@@ -81,11 +87,31 @@ check "公钥在 authorized_keys" "wc -l < ~/.ssh/authorized_keys | awk '{exit (
 check "防火墙开" "sudo ufw status | grep -q '22/tcp.*ALLOW'"
 
 echo ""
+echo "--- Provider (CC Switch 在客户机本地管 key) ---"
+check "hermes MiniMax provider 装" "[ -d /home/debian/.hermes/hermes-agent/plugins/model-providers/minimax ]"
+check "hermes OpenRouter provider 装" "[ -d /home/debian/.hermes/hermes-agent/plugins/model-providers/openrouter ]"
+check "hermes DeepSeek provider 装" "[ -d /home/debian/.hermes/hermes-agent/plugins/model-providers/deepseek ]"
+
+echo ""
+echo "--- 监控 ---"
+check "health-check.sh 装" "[ -x /home/debian/.local/bin/health-check.sh ]"
+check "unattended-upgrades 装" "which unattended-upgrade"
+
+echo ""
 echo "--- 汇总 ---"
 echo "  ✓ PASS: $PASS"
 if [ "$FAIL" -gt 0 ]; then
     echo -e "  ${RED}✗ FAIL: $FAIL${NC}"
+    echo ""
+    echo "装错项, 许总你说先看 README.zh-CN.md 再干:"
+    echo "  /home/debian/.hermes/hermes-agent/README.zh-CN.md"
+    echo "  https://hermes-agent.nousresearch.com/docs/getting-started/installation"
     exit 1
 else
-    echo -e "  ${GREEN}全部通过!${NC}"
+    echo -e "  ${GREEN}全部通过! 装机完整!${NC}"
+    echo ""
+    echo "下一步 (许总你说):"
+    echo "  1. hermes setup --portal  # 走 Nous Portal OAuth (300+ 模型)"
+    echo "  2. 或者 hermes model       # 手动选 provider + 配 key"
+    echo "  3. feishu-cli auth login   # 配飞书 client credentials"
 fi
