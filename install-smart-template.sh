@@ -497,43 +497,12 @@ done
 mkdir -p /home/$ACTUAL_USER/.hermes/logs
 $SUDO chown -R $ACTUAL_USER:$ACTUAL_USER /home/$ACTUAL_USER/.hermes/logs
 
-# 配 dashboard.basic_auth (Bug 17 修 — 0.0.0.0 必须配)
-# 生成密码 hash (用 hermes 自己的 hash 函数)
-HERMES_VENV_DIR=$(dirname "$HERMES_BIN")
-DASHBOARD_PASSWORD="hermes2026"
-DASHBOARD_HASH=$("$HERMES_VENV_DIR/python" -c "
-import sys
-sys.path.insert(0, '$HERMES_VENV_DIR/lib/python3.11/site-packages')
-try:
-    from plugins.dashboard_auth.basic import hash_password
-    print(hash_password('$DASHBOARD_PASSWORD'))
-except Exception as e:
-    print(f'ERROR: {e}')
-" 2>/dev/null | tail -1)
-
-if [[ "$DASHBOARD_HASH" == scrypt* ]]; then
-    # 加到 config.yaml
-    if [ -f /home/$ACTUAL_USER/.hermes/config.yaml ]; then
-        if ! grep -q "^dashboard:" /home/$ACTUAL_USER/.hermes/config.yaml; then
-            cat >> /home/$ACTUAL_USER/.hermes/config.yaml << EOF
-
-# Dashboard (老子装的, Bug 17 修)
-dashboard:
-  basic_auth:
-    username: admin
-    password_hash: $DASHBOARD_HASH
-EOF
-            $SUDO chown $ACTUAL_USER:$ACTUAL_USER /home/$ACTUAL_USER/.hermes/config.yaml
-            echo "  ✓ dashboard.basic_auth 配好 (admin/hermes2026)"
-        fi
-    fi
-else
-    echo -e "  ${YELLOW}⚠ hash 生成失败, 用 127.0.0.1 fallback${NC}"
-    HERMES_HOST="127.0.0.1"
-fi
-
-# 默认 host (0.0.0.0 需要 auth, 否则用 127.0.0.1)
-HERMES_HOST="${HERMES_HOST:-0.0.0.0}"
+# ⚠️ 关键: dashboard.auth 由 CC Switch 管 (许总你说 2026-08-21)
+#   - Hermes 不用配 dashboard.basic_auth
+#   - 客户用 CC Switch 管 API key (Anthropic/DeepSeek/MiniMax/智谱/Ollama)
+#   - Hermes serve 绑 127.0.0.1 (本地访问, 安全)
+#   - 远程访问靠 SSH 隧道 (tunnel) 或 LAN 内网
+HERMES_HOST="127.0.0.1"
 
 # ⚠️ 关键: 写到 /etc/systemd/system/ (system-level, 不靠 user 登录)
 # Bug 14/15/16 修: User=sea → User=$ACTUAL_USER, 端口 8080 → 9119, 命令 web → serve
@@ -553,7 +522,7 @@ Environment="HERMES_HOME=/home/$ACTUAL_USER/.hermes"
 Environment="PATH=$HERMES_VENV_DIR:/home/$ACTUAL_USER/.local/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="PIP_INDEX_URL=$PIP_MIRROR"
 WorkingDirectory=$HERMES_WD
-ExecStart=$HERMES_BIN serve --host $HERMES_HOST --port 9119
+ExecStart=$HERMES_BIN serve --host 127.0.0.1 --port 9119
 Restart=always
 RestartSec=10
 TimeoutStartSec=0
