@@ -580,11 +580,13 @@ if [ -x "$HERMES_BIN" ]; then
     if [ ! -f /etc/systemd/system/hermes-gateway.service ]; then
         echo "  装 hermes-gateway (system-level, 用官方 gateway install)..."
         # Bug 18 修: 用绝对路径, 不用 $SUDO hermes (PATH 可能没装)
-        $SUDO $HERMES_BIN gateway install --system --start-now --start-on-login 2>&1 | tail -5
+        # 按 EVOLUTION-23: 官方 docs 是 `sudo hermes gateway install --system`
+        # 加 --force 重写 service (修复之前错的模板)
+        $SUDO -u $ACTUAL_USER $HERMES_BIN gateway install --system --start-now --start-on-login --force 2>&1 | tail -5
         sleep 3
     else
-        echo "  hermes-gateway.service 已存在, 重启..."
-        $SUDO systemctl restart hermes-gateway.service
+        echo "  hermes-gateway.service 已存在, 用官方 install --force 重写 (按 EVOLUTION-23)..."
+        $SUDO -u $ACTUAL_USER $HERMES_BIN gateway install --system --start-now --start-on-login --force 2>&1 | tail -5
         sleep 2
     fi
 
@@ -596,6 +598,26 @@ if [ -x "$HERMES_BIN" ]; then
     else
         echo -e "  ${YELLOW}⚠ hermes-gateway 没跑 — 看 journal${NC}"
         $SUDO journalctl -u hermes-gateway.service -n 20 --no-pager 2>&1 | tail -10
+    fi
+
+    # 按 EVOLUTION-23: 官方 docs 推荐 systemd_watchdog (event-loop 守护)
+    if [ -f /home/$ACTUAL_USER/.hermes/config.yaml ]; then
+        if ! grep -q "systemd_watchdog_seconds" /home/$ACTUAL_USER/.hermes/config.yaml; then
+            echo "  按官方 docs 加 systemd_watchdog_seconds (event-loop 守护)..."
+            sudo -u $ACTUAL_USER python3 -c "
+import yaml
+with open('/home/$ACTUAL_USER/.hermes/config.yaml') as f:
+    data = yaml.safe_load(f) or {}
+if 'gateway' not in data:
+    data['gateway'] = {}
+data['gateway']['systemd_watchdog_seconds'] = 120
+with open('/home/$ACTUAL_USER/.hermes/config.yaml', 'w') as f:
+    yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
+print('✓ systemd_watchdog_seconds = 120')
+" 2>&1
+            # 重写 service 让 watchdog 生效
+            $SUDO -u $ACTUAL_USER $HERMES_BIN gateway install --system --start-now --start-on-login --force 2>&1 | tail -3
+        fi
     fi
 else
     echo -e "  ${YELLOW}⚠ hermes 二进制不在, 跳过${NC}"

@@ -88,6 +88,17 @@ check "公钥在 authorized_keys" "wc -l < ~/.ssh/authorized_keys | awk '{exit (
 check "防火墙开" "sudo ufw status | grep -q '22/tcp.*ALLOW'"
 
 echo ""
+echo "--- 开机自启 (按 EVOLUTION-23 严守, 实战经验) ---"
+check "hermes-web.service enabled (systemd)" "systemctl is-enabled hermes-web.service"
+check "hermes-gateway.service enabled (systemd)" "systemctl is-enabled hermes-gateway.service"
+check "hermes-web.service Restart=always" "systemctl show hermes-web.service | grep -q 'Restart=always'"
+check "hermes-gateway.service Restart=always" "systemctl show hermes-gateway.service | grep -q 'Restart=always'"
+check "hermes-web.service WantedBy=multi-user.target" "systemctl show hermes-web.service | grep -q 'WantedBy=multi-user.target'"
+check "hermes-gateway.service WantedBy=multi-user.target" "systemctl show hermes-gateway.service | grep -q 'WantedBy=multi-user.target'"
+check "disable-suspend.service enabled (防休眠)" "systemctl is-enabled disable-suspend.service"
+check "soft-link 在 multi-user.target.wants (boot 拉起)" "ls /etc/systemd/system/multi-user.target.wants/hermes-web.service && ls /etc/systemd/system/multi-user.target.wants/hermes-gateway.service"
+
+echo ""
 echo "--- Provider (CC Switch 在客户机本地管 key) ---"
 check "hermes MiniMax provider 装" "[ -d /home/debian/.hermes/hermes-agent/plugins/model-providers/minimax ]"
 check "hermes OpenRouter provider 装" "[ -d /home/debian/.hermes/hermes-agent/plugins/model-providers/openrouter ]"
