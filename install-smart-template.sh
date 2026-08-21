@@ -88,7 +88,52 @@ $SUDO apt install -y -qq \
     locales logrotate ca-certificates apt-transport-https gnupg lsb-release \
     build-essential python3 python3-pip python3-venv \
     avahi-daemon avahi-utils \
-    network-manager openssh-server
+    network-manager openssh-server \
+    fcitx5 fcitx5-chinese-addons fcitx5-rime fcitx5-config-qt \
+    fonts-wqy-zenhei fonts-wqy-microhei fonts-noto-cjk
+
+# 配中文输入法 (fcitx5)
+echo "  配中文输入法 (fcitx5 + rime)..."
+mkdir -p $HOME/.config/fcitx5
+cat > $HOME/.config/fcitx5/profile << 'EOF'
+[Profile]
+DefaultIM=fcitx5-rime
+
+[Groups/0]
+Name=Default
+DefaultIM=fcitx5-rime
+EOF
+
+# GTK/QT 环境变量 (许总你说)
+cat >> $HOME/.pam_environment << 'EOF'
+GTK_IM_MODULE DEFAULT=fcitx
+QT_IM_MODULE  DEFAULT=fcitx
+XMODIFIERS    DEFAULT=@im=fcitx
+EOF
+
+# 防休眠设置 (systemd-inhibit service)
+echo "  配防休眠 (systemd-inhibit service)..."
+$SUDO tee /etc/systemd/system/disable-suspend.service > /dev/null << 'EOF'
+[Unit]
+Description=Disable system suspend (caffeine for systemd)
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/systemd-inhibit --what=idle:sleep --why=Hermes-running --mode=block sleep infinity
+Restart=always
+RestartSec=10
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+$SUDO systemctl daemon-reload
+$SUDO systemctl enable disable-suspend.service
+$SUDO systemctl start disable-suspend.service
+
+echo "  ✓ 中文输入法 fcitx5 + 防休眠 service 配好"
 
 # 谷歌浏览器 (国内能访问 dl.google.com)
 # 注意: dl.google.com 只提供 amd64 包, arm64 机器需用 chromium 或 skip
