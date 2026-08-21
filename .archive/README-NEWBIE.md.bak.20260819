@@ -5,7 +5,7 @@
 ### 第 1 步: 下载
 
 ```bash
-curl -fsSL https://xumugong.com/install-smart.sh | bash
+curl -fsSL https://mumu8728.com/install-smart.sh | bash
 ```
 
 或直接下载这个文件, 双击运行。
@@ -59,7 +59,7 @@ bash ~/.hermes/scripts/auto-doctor.sh
 bash ~/.hermes/skills/<skill>/SKILL.md
 
 # 联系许总
-# 飞书: xumugong.com
+# 飞书: mumu8728.com
 ```
 
 ## 给客户的"智能"体验

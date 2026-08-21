@@ -45,9 +45,9 @@ echo "  ✓ 系统: $OS"
 
 # 2. 下载 install-smart.sh
 echo -e "\n${YELLOW}[2/7] 下载 install-smart.sh${NC}"
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart.sh -o install-smart.sh
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-debian.sh -o install-smart-debian.sh
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-offline.sh -o install-offline.sh
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart.sh -o install-smart.sh
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-debian.sh -o install-smart-debian.sh
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-offline.sh -o install-offline.sh
 echo "  ✓ install-smart*.sh 下载"
 
 # 3. 下载 hermes-agent 官方包
@@ -89,7 +89,7 @@ EOF
     # CC Switch AppImage
     mkdir -p cc-switch
     cd cc-switch
-    wget -q https://github.com/xumugong/cc-switch/releases/latest/download/cc-switch.AppImage -O cc-switch.AppImage 2>/dev/null || echo "  ⚠ CC Switch 下载失败 (用本地装)"
+    wget -q https://github.com/mumu8728/cc-switch/releases/latest/download/cc-switch.AppImage -O cc-switch.AppImage 2>/dev/null || echo "  ⚠ CC Switch 下载失败 (用本地装)"
 
     cd "$WORK_DIR"
     echo "  ✓ 额外软件包下载"

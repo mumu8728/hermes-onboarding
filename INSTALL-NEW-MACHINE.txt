@@ -2,7 +2,7 @@
 Hermes 主机出厂设置 - 一键装命令 (许总你直接用)
 ================================================================================
 日期: 2026-08-21
-仓库: xumugong/hermes-onboarding
+仓库: mumu8728/hermes-onboarding
 版本: v0.3.0 (12 commit, Bug 1-10 全部修好)
 
 ================================================================================
@@ -10,14 +10,14 @@ A. 推荐 — 一键远程装 (许总你 push 完跑)
 ================================================================================
 
 # 在新机上 (Debian 13) 跑:
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-template.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-template.sh | bash
 
 ================================================================================
 B. 许总你 push 命令 (在 Mac 跑, 一次性)
 ================================================================================
 
 cd ~/.hermes/hermes-onboarding
-git remote add origin git@github.com:xumugong/hermes-onboarding.git
+git remote add origin git@github.com:mumu8728/hermes-onboarding.git
 git branch -M main
 git push -u origin main
 
@@ -170,7 +170,7 @@ K. 仓库信息
 ================================================================================
 
 本地: /Users/mac/.hermes/hermes-onboarding/
-GitHub: xumugong/hermes-onboarding (待 push)
+GitHub: mumu8728/hermes-onboarding (待 push)
 版本: v0.3.0 (12 commit)
 文件: 19 文件
 大小: ~120KB
@@ -183,7 +183,7 @@ L. 联系方式
 ================================================================================
 
 仓库作者: 许木公 (许总你)
-GitHub: xumugong
+GitHub: mumu8728
 AI 助手: 许木公 (老子) - MiniMax-M3
 
 ================================================================================

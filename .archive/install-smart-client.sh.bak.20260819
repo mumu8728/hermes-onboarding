@@ -6,7 +6,7 @@
 # 客户用 LAN 访问路由器上跑的 Hermes, 不需要 VPN
 #
 # 用法:
-#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-client.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-client.sh | bash
 #
 # 4 步自动跑 (3-5 分钟):
 #   1. 检测系统 (Mac/Debian/Win)

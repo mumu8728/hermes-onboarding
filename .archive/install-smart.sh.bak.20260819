@@ -6,7 +6,7 @@
 #
 # 用法:
 #   curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
-#   curl -fsSL https://xumugong.com/install-smart.sh | bash
+#   curl -fsSL https://mumu8728.com/install-smart.sh | bash
 #
 # 或更简单:
 #   1. 下载 "Hermes 设置" App
@@ -229,6 +229,6 @@ echo ""
 echo -e "${CYAN}${BOLD}遇到问题:${NC}"
 echo "  • 看 ~/.hermes/docs/OUT-OF-BOX.md"
 echo "  • 跑 bash ~/.hermes/scripts/auto-doctor.sh"
-echo "  • 找 xumugong (许总) @ xumugong.com"
+echo "  • 找 mumu8728 (许总) @ mumu8728.com"
 echo ""
 echo -e "${GREEN}享受智能!${NC}"

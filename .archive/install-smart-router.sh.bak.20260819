@@ -6,7 +6,7 @@
 # 全部用国内镜像, 国内可用
 #
 # 用法:
-#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-router.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-router.sh | bash
 #
 # 7 步自动跑 (15-30 分钟):
 #   1. 配国内 apt 镜像源
@@ -92,7 +92,7 @@ mkdir -p $HOME/.local/bin
 if [ -f "$HOME/.local/bin/cc-switch" ]; then
     echo "  ✓ CC Switch 已装"
 else
-    wget -q https://github.com/xumugong/cc-switch/releases/latest/download/cc-switch.AppImage -O $HOME/.local/bin/cc-switch.AppImage 2>/dev/null && {
+    wget -q https://github.com/mumu8728/cc-switch/releases/latest/download/cc-switch.AppImage -O $HOME/.local/bin/cc-switch.AppImage 2>/dev/null && {
         chmod +x $HOME/.local/bin/cc-switch.AppImage
         cat > $HOME/.local/bin/cc-switch << 'WRAPPER'
 #!/bin/bash

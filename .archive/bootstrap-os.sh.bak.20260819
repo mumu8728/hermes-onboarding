@@ -5,7 +5,7 @@
 # 给新机 / VM 第一次开机初始化 (在 install-smart.sh 之前跑)
 #
 # 用法:
-#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/bootstrap-os.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/bootstrap-os.sh | bash
 #
 # 或本地:
 #   bash bootstrap-os.sh --auto
@@ -93,7 +93,7 @@ if [ -f "$HOME/.ssh/id_ed25519.pub" ] || [ -f "$HOME/.ssh/id_rsa.pub" ]; then
     echo "  ✓ SSH key 已存在"
 else
     echo "  生成 ed25519 SSH key..."
-    ssh-keygen -t ed25519 -C "xumugong@hermes-onboarding" -f "$HOME/.ssh/id_ed25519" -N ""
+    ssh-keygen -t ed25519 -C "mumu8728@hermes-onboarding" -f "$HOME/.ssh/id_ed25519" -N ""
     echo "  ✓ SSH key 生成"
     echo "  ⚠️  公钥: $HOME/.ssh/id_ed25519.pub"
     echo "  ⚠️  手动加到 https://github.com/settings/keys"

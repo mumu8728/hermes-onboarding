@@ -14,7 +14,7 @@ git push origin main
 
 ```bash
 cd ~/.hermes/hermes-onboarding
-git remote add origin git@github.com:xumugong/hermes-onboarding.git
+git remote add origin git@github.com:mumu8728/hermes-onboarding.git
 git branch -M main
 git push -u origin main
 ```
@@ -23,12 +23,12 @@ git push -u origin main
 
 ```bash
 cd ~/.hermes/hermes-onboarding
-gh repo create xumugong/hermes-onboarding --public --source=. --push
+gh repo create mumu8728/hermes-onboarding --public --source=. --push
 ```
 
 ## 老子推完后的状态
 
-- ✅ 仓库: github.com/xumugong/hermes-onboarding
+- ✅ 仓库: github.com/mumu8728/hermes-onboarding
 - ✅ 9 commit (a1006e5 → 8b0eb13)
 - ✅ 17 文件 (16 装机 + OPTIMIZATION-PLAN.md)
 - ✅ README / CHANGELOG / LICENSE 全在

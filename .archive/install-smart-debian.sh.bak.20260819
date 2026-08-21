@@ -5,7 +5,7 @@
 # 给 Debian Linux 客户 — 7 步装完
 #
 # 用法:
-#   curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-debian.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-debian.sh | bash
 #
 # 7 步自动跑:
 #   1. 检查 Debian 系统 (30 秒)
@@ -95,7 +95,7 @@ if command -v ccswitch &> /dev/null || command -v cc-switch &> /dev/null; then
 else
     echo "下载 CC Switch AppImage (Debian 兼容)..."
     # CC Switch 开源版 - GitHub release
-    wget -q https://github.com/xumugong/cc-switch/releases/latest/download/cc-switch.AppImage -O $HOME/.local/bin/cc-switch.AppImage
+    wget -q https://github.com/mumu8728/cc-switch/releases/latest/download/cc-switch.AppImage -O $HOME/.local/bin/cc-switch.AppImage
     chmod +x $HOME/.local/bin/cc-switch.AppImage
 
     # 创建 wrapper
@@ -248,6 +248,6 @@ echo ""
 echo -e "${CYAN}${BOLD}遇到问题:${NC}"
 echo "  • 跑 bash $HOME/.hermes/scripts/auto-doctor.sh"
 echo "  • 看 $HOME/.hermes/docs/OUT-OF-BOX.md"
-echo "  • 找 xumugong (许总) @ xumugong.com"
+echo "  • 找 mumu8728 (许总) @ mumu8728.com"
 echo ""
 echo -e "${GREEN}享受智能!${NC}"

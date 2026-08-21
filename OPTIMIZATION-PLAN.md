@@ -110,7 +110,7 @@
 
 ```bash
 # 许总你跑 (模板机 1 次)
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-template.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-template.sh | bash
 ```
 
 ### Step 1: 配国内 apt 镜像源 (~30 秒)
@@ -348,7 +348,7 @@ bash ~/.hermes/hermes-onboarding/test-vm-lima.sh
 ### 第三层: 真机 (等许总你给新机 SSH)
 
 ```bash
-ssh debian-server "bash <(curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-template.sh)"
+ssh debian-server "bash <(curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-template.sh)"
 ```
 
 - 跑真机 install
@@ -400,7 +400,7 @@ ssh debian-server "bash <(curl -fsSL https://raw.githubusercontent.com/xumugong/
 
 ### EVOLUTION-12: 记住项目仓库地址
 > 本地: `~/.hermes/hermes-onboarding/`
-> GitHub: `xumugong/hermes-onboarding`
+> GitHub: `mumu8728/hermes-onboarding`
 > 改前必 git pull, 优化后必 git push, 验证 verify.sh 通过。
 
 ### EVOLUTION-14: 许总你的工作机不能拿来试验

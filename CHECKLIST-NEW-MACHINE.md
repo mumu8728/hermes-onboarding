@@ -25,7 +25,7 @@ lsb_release -a            # 应该 Description: Debian GNU/Linux trixie
 
 ```bash
 # 许总你的安装命令 (一键)
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-template.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-template.sh | bash
 ```
 
 ### Step 3: 验证 6 项 (5 分钟)

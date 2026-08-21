@@ -24,7 +24,7 @@
 
 ### 路由器 (许总你跑一次)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-router.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-router.sh | bash
 ```
 
 7 步自动跑 (15-30 分钟):
@@ -43,7 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/ins
 
 ### 客户机器 (每台客户机跑一次)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-client.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-client.sh | bash
 ```
 
 4 步自动跑 (3-5 分钟):
@@ -88,7 +88,7 @@ curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/ins
 ssh root@路由器IP
 
 # 跑一键脚本
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-router.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-router.sh | bash
 ```
 
 输出:
@@ -103,7 +103,7 @@ curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/ins
 ### Step 2: 客户机器装 (每台)
 ```bash
 # 客户机器跑 (Mac/Debian/Win WSL)
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-client.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-client.sh | bash
 ```
 
 输出:
@@ -186,4 +186,4 @@ Obsidian vault: ~/Documents/ObsidianVault
 
 ## 作者
 
-许总 @ xumugong (中国赫墨斯之父)
+许总 @ mumu8728 (中国赫墨斯之父)

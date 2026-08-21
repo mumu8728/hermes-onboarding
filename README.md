@@ -63,7 +63,7 @@ user_token: ⚠️ (客户 onboarding 时跑 auth login)
 ## 一键部署 (模板机)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-template.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-template.sh | bash
 ```
 
 ## 部署流程 (3 阶段, 1 类机器)
@@ -191,4 +191,4 @@ curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/ins
 
 ## 作者
 
-许总 @ xumugong (中国赫墨斯之父)
+许总 @ mumu8728 (中国赫墨斯之父)

@@ -7,7 +7,7 @@
 ## 1 行命令
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-debian.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-debian.sh | bash
 ```
 
 5 分钟装完, 7 步:
@@ -63,13 +63,13 @@ hermes-onboarding/
 
 ```bash
 # Debian
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-debian.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-debian.sh | bash
 
 # macOS
-curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart.sh | bash
 
 # 老机升级
-bash <(curl -fsSL https://raw.githubusercontent.com/xumugong/hermes-onboarding/main/install-smart-debian.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/mumu8728/hermes-onboarding/main/install-smart-debian.sh)
 ```
 
 ## 出错怎么办
@@ -114,4 +114,4 @@ apt list --installed | grep obsidian
 
 ## 作者
 
-许总 @ xumugong (中国赫墨斯之父)
+许总 @ mumu8728 (中国赫墨斯之父)
